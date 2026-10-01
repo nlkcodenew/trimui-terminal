@@ -727,6 +727,27 @@ int init_osk_ttf_font(const char *font_path, int font_size, int shade) {
     return 1;
 }
 int is_osk_ttf_loaded(void) { return osk_ttf_font != NULL; }
+/* Chon co TTF lon nhat ma van vua be ngang (46*cw) va 6 hang vua 55% man hinh. */
+int pick_osk_ttf_font(const char *font_path, int max_w, int max_h) {
+    static const int sizes[] = {48, 44, 40, 36, 32, 30, 28, 26, 24, 22, 20, 18, 16, 0};
+    if (TTF_Init() == -1) return 0;
+    for (int k = 0; sizes[k]; k++) {
+        TTF_Font *f = TTF_OpenFont(font_path, sizes[k]);
+        if (!f) continue;
+        int cw = 0, ch = 0;
+        TTF_SizeText(f, "M", &cw, &ch);
+        if (cw > 0 && ch > 0 && 46 * cw <= max_w && 6 * ch <= max_h) {
+            if (osk_ttf_font) TTF_CloseFont(osk_ttf_font);
+            osk_ttf_font = f;
+            osk_ttf_char_width = cw;
+            osk_ttf_char_height = ch;
+            osk_ttf_font_shade = 1;
+            return sizes[k];
+        }
+        TTF_CloseFont(f);
+    }
+    return 0;
+}
 int get_osk_ttf_char_width(void) { return osk_ttf_char_width; }
 int get_osk_ttf_char_height(void) { return osk_ttf_char_height; }
 void draw_string_osk_ttf(SDL_Surface *surface, const char *text, int x, int y, SDL_Color fg, SDL_Color bg) {

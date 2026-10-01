@@ -1,3 +1,4 @@
+#include <sys/types.h>
 #ifndef VT100_H
 #define VT100_H
 
@@ -134,6 +135,8 @@ extern int cmdfd;
 
 /* TTY functions */
 void tty_new(void);
+void trimui_kill_shell(void);
+pid_t trimui_shell_pid(void);
 void tty_read(void);
 void tty_write(const char *s, size_t n);
 void tty_resize(void);

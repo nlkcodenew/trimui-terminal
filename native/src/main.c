@@ -3,6 +3,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <ctype.h>
 #include <errno.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
 #include <limits.h>
@@ -227,15 +228,22 @@ void sdl_load_fonts() {
     }
 #if defined(BR2) && !defined(RPI)
     {
-        int osk_size = 26;
+        int osk_max_w = main_window.width > 0 ? main_window.width - 16 : 1264;
+        int osk_max_h = (main_window.height > 0 ? main_window.height : 720) * 55 / 100;
+        int osk_size = 0;
+        const char *osk_path = NULL;
         const char **fp = trimui_system_fonts;
         while (*fp) {
-            if (init_osk_ttf_font(*fp, osk_size, 1)) {
-                fprintf(stderr, "TTF font auto (osk): %s size %d -> %dx%d\n", *fp, osk_size, get_osk_ttf_char_width(), get_osk_ttf_char_height());
+            int got = pick_osk_ttf_font(*fp, osk_max_w, osk_max_h);
+            if (got > 0) {
+                osk_size = got;
+                osk_path = *fp;
                 break;
             }
             fp++;
         }
+        if (osk_size > 0)
+            fprintf(stderr, "TTF font auto (osk): %s size %d -> %dx%d (max %dx%d)\n", osk_path, osk_size, get_osk_ttf_char_width(), get_osk_ttf_char_height(), osk_max_w, osk_max_h);
     }
 #endif
 }
@@ -256,17 +264,18 @@ void sdl_shutdown(void) {
     if (SDL_WasInit(SDL_INIT_EVERYTHING) != 0 && !shutdown_called) {
         shutdown_called = 1;
         fprintf(stderr, "SDL shutting down\n");
+        thread_should_exit = 1;
+        trimui_kill_shell();
         if (thread) {
             printf("Signaling ttythread to exit...\n");
-            thread_should_exit = 1;
-            // tty_write n key to answer y/n question if blocked on ttyread
             tty_write("n", 1);
-
-            tty_write("\033[?1000l", 7);   // disable mouse tracking to unblock ttyread
-            SDL_WaitThread(thread, NULL);  // Wait for thread to exit cleanly
-            // SDL_KillThread(thread);
+            tty_write("\033[?1000l", 7);
+            /* select() timeout 200ms + shell bi kill -> thread tu thoat nhanh. */
+            SDL_WaitThread(thread, NULL);
             thread = NULL;
         }
+        extern int cmdfd;
+        if (cmdfd >= 0) { close(cmdfd); cmdfd = -1; }
 
         // Cleanup TTF font
         cleanup_ttf_font();
@@ -967,11 +976,21 @@ int tty_thread(void *unused) {
 
     for (i = 0;; i++) {
         if (thread_should_exit) break;
+        if (cmdfd < 0) break;
         FD_ZERO(&rfd);
         FD_SET(cmdfd, &rfd);
-        if (select(cmdfd + 1, &rfd, NULL, NULL, tv) < 0) {
-            if (errno == EINTR) continue;
-            die("select failed: %s\n", strerror(errno));
+        {
+            struct timeval tv_idle = {0, 200 * 1000};
+            int sr = select(cmdfd + 1, &rfd, NULL, NULL, tv ? tv : &tv_idle);
+            if (sr < 0) {
+                if (errno == EINTR) continue;
+                break;
+            }
+            if (sr == 0) {
+                tv = NULL;
+                i = 0;
+                continue;
+            }
         }
 
         /*

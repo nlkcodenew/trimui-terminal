@@ -6,6 +6,11 @@
 #include <pty.h>
 #include <pwd.h>
 #include <signal.h>
+#include <sys/time.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#define _POSIX_C_SOURCE 200809L
+#include <time.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -33,7 +38,7 @@ extern int show_help;
 Term term;
 CSIEscape csiescseq;
 STREscape strescseq;
-int cmdfd;
+int cmdfd = -1;
 int iofd = -1;
 static pid_t pid;
 
@@ -201,6 +206,16 @@ void sig_chld(int a) {
     }
 }
 
+void trimui_kill_shell(void) {
+    extern pid_t trimui_shell_pid(void);
+    pid_t p = trimui_shell_pid();
+    if (p > 0) {
+        kill(p, SIGTERM);
+        usleep(200 * 1000);
+        if (kill(p, 0) == 0) kill(p, SIGKILL);
+    }
+}
+pid_t trimui_shell_pid(void) { return pid; }
 void tty_new(void) {
     int m, s;
     struct winsize w = {term.row, term.col, 0, 0};
@@ -270,7 +285,11 @@ void tty_read(void) {
 }
 
 void tty_write(const char *s, size_t n) {
-    if (write(cmdfd, s, n) == -1) die("write error on tty: %s\n", strerror(errno));
+    if (cmdfd < 0) return;
+    if (write(cmdfd, s, n) == -1) {
+        if (errno == EIO || errno == EBADF || errno == EPIPE) return;
+        die("write error on tty: %s\n", strerror(errno));
+    }
 }
 
 void tty_resize(void) {

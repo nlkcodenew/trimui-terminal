@@ -207,22 +207,19 @@ void draw_keyboard(SDL_Surface *surface) {
             y += embedded_font_name == 3 ? embedded_font_char_height + 2 : embedded_font_char_height;
         }
     } else if (is_osk_ttf_loaded()) {
-        /* OSK co dinh: giam font 26 -> vua 1280, khong fit-width dong. */
-        int cw = (get_osk_ttf_char_width() * 3) / 4;
-        int ch = (get_osk_ttf_char_height() * 3) / 4;
+        /* OSK vua khit Brick Pro: hang dai nhat (17 phim) vua 1280, 6 hang vua ~55% chieu cao.
+           Dung cw/ch thuc te tu pick_osk_ttf_font, khong scale them. */
+        int cw = get_osk_ttf_char_width();
+        int ch = get_osk_ttf_char_height();
         int total_length = -1;
         for (int i = 0; i < NUM_KEYS && syms[0][0][i]; i++) {
             total_length += (1 + strlen(syms[0][0][i])) * cw;
         }
-        if (total_length > surface->w - 8) {
-            cw = (cw * (surface->w - 8)) / total_length;
-            ch = (ch * (surface->w - 8)) / total_length;
-            total_length = surface->w - 8;
-        }
         int center_x = (surface->w - total_length) / 2;
+        if (center_x < 4) center_x = 4;
         int x = center_x;
         int y = surface->h - ch * NUM_ROWS - KEYBOARD_PADDING;
-        if (y < surface->h / 2) y = surface->h / 2;
+        if (y < surface->h * 40 / 100) y = surface->h * 40 / 100;
         if (location == 1) y = KEYBOARD_PADDING;
         SDL_Rect keyboard_rect = {x - 4, y - 3, total_length + 8, ch * NUM_ROWS + 6};
         SDL_FillRect(surface, &keyboard_rect, bg_color);

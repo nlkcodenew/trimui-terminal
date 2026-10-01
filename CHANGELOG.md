@@ -1,3 +1,7 @@
+## v0.2.4 - 2026-10-01
+
+- Sua OSK thu nho: chon co TTF lon nhat vua that be ngang full 1280 va 6 hang vua 55% chieu cao (pick_osk_ttf_font thu size 48->16), dung kich thuoc glyph thuc te, khong scale 3/4 cung.
+- Sua B lan 2 treo: kill shell con (TERM roi KILL) + select() timeout 200ms de thread tty tu thoat + tty_write/tty_read chiu duoc fd chet + bao thread_should_exit truoc khi kill.
 ## v0.2.3 - 2026-10-01
 
 - OTA tu dong hoan toan: mo app la tu check + tu tai + tu cai (khong hoi y/N). That bai/offline thi bo qua, khong chan mo app. Them timeout fail-fast cho curl/wget.
