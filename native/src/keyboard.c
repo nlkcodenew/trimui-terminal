@@ -47,6 +47,8 @@ static int visual_offset = 0;
 static int shifted = 0;
 static int location = 0;
 static int mod_state = 0;
+static int quit_combo_select = 0;
+static int quit_combo_start = 0;
 
 int active = 1;
 int show_help = 1;
@@ -80,7 +82,7 @@ void init_keyboard(int _embedded_font_name, int _use_embedded_font_for_keyboard)
 
 char *help1 =
     "How to use:\n"
-    "  ARROWS:     select key from keyboard\n"
+    "  DPAD/ARROWS: select key from keyboard\n"
     "  A:          press key\n"
     "  B:          backspace\n"
     "  L1:         shift\n"
@@ -91,7 +93,7 @@ char *help1 =
     "  SELECT:     tab\n"
     "  L2:         left\n"
     "  R2:         right\n"
-    "  MENU:       quit\n\n"
+    "  MENU:       quit (or SELECT+START)\n\n"
     "Cheatcheet (tutorial at www.shellscript.sh):\n"
     "  TAB key         complete path\n"
     "  UP/DOWN keys    navigate history\n"
@@ -104,7 +106,7 @@ char *help1 =
 
 char *help2 =
     "How to use:\n"
-    "  ARROWS:     select key from keyboard\n"
+    "  DPAD/ARROWS: select key from keyboard\n"
     "  A:          press key\n"
     "  B:          backspace\n"
     "  L1:         shift\n"
@@ -115,7 +117,7 @@ char *help2 =
     "  SELECT:     tab\n"
     "  L2:         left\n"
     "  R2:         right\n"
-    "  MENU:       quit\n\n";
+    "  MENU:       quit (or SELECT+START)\n\n";
 
 #define CREDIT "@haoict (c) 2025"
 
@@ -344,6 +346,21 @@ int compute_new_col(int visual_offset, int old_row, int new_row) {
 static int rgb30_first_jbutton10_pressed = 0;  // TODO: temp fix for RGB30, for unknown reason, Joystick jbutton 10 (KEY_QUIT) always triggers at startup, so we must ignore it
 #endif
 int handle_keyboard_event(SDL_Event *event) {
+#if defined(BR2) && !defined(RPI)
+    /* SELECT+START an cung luc = thoat (du phong khi nut MENU bi OS nuot). */
+    if (event->key.type == SDL_KEYDOWN || event->key.type == SDL_KEYUP) {
+        int held_now = (event->key.type == SDL_KEYDOWN);
+        if (event->key.keysym.sym == JOYBUTTON_SELECT) quit_combo_select = held_now;
+        else if (event->key.keysym.sym == JOYBUTTON_START) quit_combo_start = held_now;
+        if (quit_combo_select && quit_combo_start) {
+            printf("Exit event requested by SELECT+START combo\n");
+            SDL_Event quit_event;
+            quit_event.type = SDL_QUIT;
+            SDL_PushEvent(&quit_event);
+            return 1;
+        }
+    }
+#endif
     if (event->key.type == SDL_KEYDOWN && event->key.keysym.sym == KEY_QUIT) {
 #if defined(RGB30)
         if (!rgb30_first_jbutton10_pressed) {
@@ -433,6 +450,10 @@ int handle_keyboard_event(SDL_Event *event) {
         // printf("handle_keyboard_event: type: %s, sym: %d (%s), scancode:%d\n", event->key.type == SDL_KEYDOWN ? "keydown" : "keyup", event->key.keysym.sym, SDL_GetKeyName(event->key.keysym.sym), event->key.keysym.scancode);
         if (show_help) {
             // do nothing
+        } else if (event->key.keysym.sym == KEY_UP || event->key.keysym.sym == KEY_DOWN ||
+                   event->key.keysym.sym == KEY_LEFT || event->key.keysym.sym == KEY_RIGHT) {
+            /* DPAD di chuyen con tro ban phim ao ngay, khong cho giu 150ms. */
+            handle_narrow_keys_held(event->key.keysym.sym);
         } else if (event->key.keysym.sym == KEY_SHIFT) {
             shifted = 1;
             toggled[4][0] = 1;
@@ -461,6 +482,13 @@ int handle_keyboard_event(SDL_Event *event) {
                 simulate_key(keys[shifted][selected_j][selected_i], STATE_UP);
             if (selected_j == 4 && (selected_i == 0 || selected_i == 11)) shifted = toggled[selected_j][selected_i];
         } else if (event->key.keysym.sym == KEY_ENTER) {
+            if (selected_j == 5 && selected_i == 9) {
+                printf("Exit event requested by OSK Exit key\n");
+                SDL_Event quit_event;
+                quit_event.type = SDL_QUIT;
+                SDL_PushEvent(&quit_event);
+                return 1;
+            }
             int key = keys[shifted][selected_j][selected_i];
             if (mod_state & KMOD_CTRL) {
                 if (key >= 64 && key < 64 + 32)

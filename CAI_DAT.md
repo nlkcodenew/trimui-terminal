@@ -1,12 +1,12 @@
-# Cai dat Trimui Terminal v0.1.0
+# Cai dat Trimui Terminal
 
 Terminal + BT survey cho TrimUI Brick Pro (Stock OS) va Smart Pro S.
 
 ## 1. Chuan bi
 
 - The nho cua may (FAT32/exFAT).
-- File `trimui-terminal-v0.1.0.zip` lay tu GitHub Releases (khong tai Source code).
-- Neu chua co Release: dung file build san trong repo tai `dist/trimui-terminal-v0.1.0.zip`.
+- File `trimui-terminal-vX.Y.Z.zip` lay tu GitHub Releases (khong tai Source code).
+- Neu chua co Release: dung file build san trong repo tai `dist/trimui-terminal-vX.Y.Z.zip`.
 - Doi chieu SHA-256 bang file `.zip.sha256` di kem neu can.
 
 ## 2. Cai moi
@@ -59,7 +59,14 @@ sh bt-survey.sh
 - START: enter. SELECT: tab. MENU: thoat.
 - L2/R2: cuon lich su khi tat ban phim.
 
-## 6. Loi thuong gap
+## 6. Cap nhat tu xa (OTA)
+
+1. Mo app, OTA tu kiem tra ban moi moi lan chay (ghi vao `Terminal-ota.log`).
+2. De cap nhat thu cong trong terminal: `sh ota-update.sh` (hoi truoc khi cai) hoac `sh ota-update.sh --apply`.
+3. OTA tai manifest tu `https://raw.githubusercontent.com/nlkcodenew/trimui-terminal/main/manifest.json`, verify sha256 tung file, cai atomically, luu VERSION moi. Xong thoat app mo lai.
+4. Tat auto-check: mo `launch.sh` voi `TERMINAL_NO_OTA=1`.
+
+## 7. Loi thuong gap
 
 | Hien tuong | Cach xu ly |
 | --- | --- |

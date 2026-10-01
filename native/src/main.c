@@ -183,17 +183,39 @@ void *x_calloc(size_t nmemb, size_t size) {
     return p;
 }
 
+static const char *trimui_system_fonts[] = {
+    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+    "assets/fallback.ttf",
+    NULL
+};
 void sdl_load_fonts() {
-    // Try to load TTF font if opt_font is set
     if (opt_font && init_ttf_font(opt_font, opt_fontsize, opt_fontshade)) {
         main_window.char_width = get_ttf_char_width();
         main_window.char_height = get_ttf_char_height();
-    } else {
-        // Fallback to bitmap font
-        main_window.char_width = get_embedded_font_char_width(embedded_font_name);
-        main_window.char_height = get_embedded_font_char_height(embedded_font_name);
-        fprintf(stderr, "Using embedded bitmap font %d (%dx%d)\n", embedded_font_name, main_window.char_width, main_window.char_height);
+        fprintf(stderr, "TTF font user: %dx%d\n", main_window.char_width, main_window.char_height);
+        return;
     }
+#if defined(BR2) && !defined(RPI)
+    /* Brick Pro: ban phim ao phai to, de doc. Tu dong nap TTF he thong size 28. */
+    {
+        int kb_size = (opt_fontsize > 0) ? opt_fontsize : 28;
+        const char **fp = trimui_system_fonts;
+        while (*fp) {
+            if (init_ttf_font(*fp, kb_size, opt_fontshade)) {
+                main_window.char_width = get_ttf_char_width();
+                main_window.char_height = get_ttf_char_height();
+                fprintf(stderr, "TTF font auto (osk): %s size %d -> %dx%d\n", *fp, kb_size, main_window.char_width, main_window.char_height);
+                return;
+            }
+            fp++;
+        }
+    }
+#endif
+    main_window.char_width = get_embedded_font_char_width(embedded_font_name);
+    main_window.char_height = get_embedded_font_char_height(embedded_font_name);
+    fprintf(stderr, "Using embedded bitmap font %d (%dx%d)\n", embedded_font_name, main_window.char_width, main_window.char_height);
 }
 
 void sdl_shutdown(void) {
@@ -979,7 +1001,7 @@ void main_loop(void) {
     int should_rerender = 0;
     int button_up_held = 0, button_down_held = 0, button_left_held = 0, button_right_held = 0;
     Uint32 last_button_held_time = 0;
-#if defined(RG35XXSP)
+#if defined(RG35XXSP) || defined(TRIMUI_BRICK)
     Uint8 joy0_hat0_last_state = 0;
 #endif
     while (running) {
@@ -1042,7 +1064,7 @@ void main_loop(void) {
                                                }}};
 
                 SDL_PushEvent(&sdl_event);
-#if defined(RG35XXSP)
+#if defined(RG35XXSP) || defined(TRIMUI_BRICK)
             } else if (ev.type == SDL_JOYHATMOTION && ev.jhat.which == 0 &&
                        ev.jhat.hat == 0) {
                 // The RG35XXSP does not treat the d-pad directions as individual buttons; instead it treats it as a joystick hat.

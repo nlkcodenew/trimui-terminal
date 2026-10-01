@@ -1,5 +1,11 @@
 # Changelog - trimui-terminal
 
+## v0.2.0 - 2026-10-01
+
+- Thoat app: MENU (KEY_QUIT) + combo du phong SELECT+START an cung luc + phim Exit tren ban phim ao (di chuyen toi Exit roi bam A).
+- DPAD dieu huong ban phim ao: DPAD button (13-16) di chuyen ngay tu lan bam dau, khong cho giu 150ms; mo rong xu ly SDL_JOYHATMOTION cho TRIMUI_BRICK.
+- Ban phim ao to, de doc: tu dong nap TTF he thong (DejaVuSansMono/DejaVuSans/fallback.ttf) voi fontsize mac dinh 28; launch.sh truyen -fontsize 28.
+- OTA tu xa: them files/ota-update.sh (manifest GitHub + staging + verify sha256 + apply), files/certs/cacert.pem, files/VERSION; launch.sh tu check ban moi moi lan mo (tat bang TERMINAL_NO_OTA=1).
 ## v0.1.0 - 2026-10-01
 
 - Fork haoict/SimpleTerminal tag `2.1.0` (SDL2).

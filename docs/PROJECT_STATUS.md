@@ -1,4 +1,4 @@
-# trimui-terminal - trang thai du an v0.1.0
+# trimui-terminal - trang thai du an v0.2.0
 
 > Cap nhat: 2026-10-01. Repo doc lap trong `Project APPS/Trimui-Terminal`, khong nam trong `chiaki-ng`.
 
