@@ -6,10 +6,10 @@ Muc dich chinh: co terminal chay duoc tren Brick Pro de chay `bt-survey`, phuc v
 
 ## Tai nhanh
 
-1. Vao [Releases](../../releases/latest), tai `trimui-terminal-v0.1.0.zip` (khong tai Source code).
+1. Vao [Releases](../../releases/latest), tai `trimui-terminal-vX.Y.Z.zip` (khong tai Source code).
 2. Giai nen vao goc the nho de co `Apps/TrimuiTerminal/launch.sh`.
 3. Lap the vao may, mo **Trimui Terminal**.
-4. Chua co GitHub Release? Dung truc tiep file build san: `dist/trimui-terminal-v0.1.0.zip` trong repo nay, giai nen vao goc the nho theo cung cau truc.
+4. Tu v0.2.3: mo app la tu check + tu tai + tu cai ban moi, khong can copy tay nua.
 
 Chi tiet tung buoc: [CAI_DAT.md](CAI_DAT.md).
 
@@ -17,20 +17,27 @@ Chi tiet tung buoc: [CAI_DAT.md](CAI_DAT.md).
 
 | Nut | Tac dung |
 | --- | --- |
-| D-pad | Chon phim tren ban phim ao |
-| A | Go phim dang chon |
-| B | Backspace (o man hinh help: gui Ctrl+C) |
+| DPAD | Di chuyen 1 o tren ban phim ao (khong nhay) |
+| A | Go phim dang chon / Huy hop thoat |
+| B lan 1 | Hien "B lan nua de thoat \| A de huy" |
+| B lan 2 (trong 4s) | Thoat app |
 | L1 | Shift |
 | R1 | Giu/nha phim (toggle) |
 | X | An/hien ban phim ao |
 | Y | Doi vi tri ban phim (tren/duoi) |
 | START | Enter |
 | SELECT | Tab |
+| SELECT+START (giu cung luc) | Thoat app (du phong) |
+| MENU | Thoat app (neu OS khong nuot) |
 | L2 / R2 | Cuon lich su len/xuong (khi tat ban phim) |
-| MENU | Thoat app |
-| START + nut Exit tren ban phim + Enter | Thoat (du phong) |
 
-Tham so khi chay: `-scale 2.0`, `-font 1..5 | /path/font.ttf`, `-fontsize N`, `-rotate 0|90|180|270`, `-r "lenh..."`, `-q`.
+Tham so khi chay: `-scale 1.0`, `-font 1..5 | /path/font.ttf`, `-fontsize N` (terminal), `-rotate 0|90|180|270`, `-r "lenh..."`, `-q`. Ban phim ao luon dung font to rieng size 26.
+
+## OTA tu dong
+
+- Mo app la tu check + tai + cai (v0.2.3+), log vao `Terminal-ota.log`. Offline thi bo qua, khong chan mo app.
+- Chay tay trong terminal: `sh ota-update.sh` (ban cu hoi y/N), `sh ota-update.sh --apply`, `sh ota-update.sh --check`.
+- Tat tu dong: mo app voi `TERMINAL_NO_OTA=1`.
 
 ## BT survey (muc dich cua app)
 
@@ -67,22 +74,21 @@ python3 tools/verify_release.py
 python3 tools/make_release.py
 ```
 
-Uu tien SDK TG5050 (`../sdk-tg5050/sdk_tg5050_linux_v1.0.0`) neu co; fallback sang `aarch64-linux-gnu-gcc` cua he thong. Chi tiet: [docs/BUILD.md](docs/BUILD.md).
+Uu tien SDK TG5050 (`../sdk-tg5050/sdk_tg5050_linux_v1.0.0`) neu co; fallback sang `aarch64-linux-gnu-gcc` cua he thong. Chi tiet: [docs/BUILD.md](docs/BUILD.md). Luu y WSL: duong dan Windows co dau cach phai build qua symlink `/tmp/tt-sdk` hoac copy repo sang duong dan khong dau cach (xem BUILD.md).
 
 ## Cau truc
 
-- `files/` - app tren the nho: `launch.sh`, `bt-survey.sh`, `config.json`, `icon.png`, `bin/trimui-terminal`, `assets/fallback.ttf`.
-- `native/src/` - source C (upstream 2.1.0 + patch Brick: mapping nut, `/bin/sh`, HOME fallback).
-- `native/upstream-2.1.0/` - snapshot goc de doi chieu.
-- `native/patches/` - patch rieng neu co (hien de trong, lich su patch nam truc tiep trong `native/src/`).
-- `tools/` - `make_release.py`, `verify_release.py` (hoc theo trimui-chiaki-ng).
-- `docs/` - trang thai du an, huong dan build, huong dan BT survey.
-- `dist/` - ZIP cai dat + sha256 (build cuc bo, khong commit len git neu da co Release).
+- `files/` - app tren the nho: `launch.sh`, `ota-update.sh`, `bt-survey.sh`, `VERSION`, `config.json`, `icon.png`, `bin/trimui-terminal`, `assets/fallback.ttf`, `certs/cacert.pem`.
+- `native/src/` - source C (upstream 2.1.0 + patch Brick).
+- `native/upstream-2.1.0/` - snapshot goc de doi chieu (khong sua).
+- `tools/` - `make_release.py`, `verify_release.py`, `make_github_release.py`.
+- `docs/` - trang thai du an, huong dan build, huong dan BT survey, handoff session.
+- `dist/` - ZIP cai dat + sha256 build cuc bo.
 - `.github/workflows/build.yml` - CI build AArch64 + verify + dong goi.
 
 ## Trang thai du an
 
-Xem [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md). Ban hien tai: `v0.1.0` (xem [CHANGELOG.md](CHANGELOG.md)).
+Xem [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md). Ban hien tai: `v0.2.3` (xem [CHANGELOG.md](CHANGELOG.md)).
 
 ## Giay phep
 
