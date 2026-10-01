@@ -17,7 +17,7 @@ if [ ! -x "$BIN" ]; then
 fi
 touch /tmp/stay_alive 2>/dev/null
 if [ -x "$APP/ota-update.sh" ] && [ "$TERMINAL_NO_OTA" != "1" ]; then
-  sh "$APP/ota-update.sh" --check >> "$ERRLOG" 2>&1 || true
+  sh "$APP/ota-update.sh" --apply >> "$ERRLOG" 2>&1 || true
 fi
 "$BIN" -scale 1 -fontsize 16 "$@" 2>> "$ERRLOG"
 CODE=$?

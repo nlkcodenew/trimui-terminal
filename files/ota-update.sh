@@ -26,12 +26,12 @@ ver_newer() {
 fetch() {
   url="$1"; out="$2"
   if command -v curl >/dev/null 2>&1; then
-    if [ -f "$CA" ]; then curl -fsSL --cacert "$CA" -o "$out" "$url" 2>/dev/null && return 0; fi
-    curl -fsSL -o "$out" "$url" 2>/dev/null && return 0
+    if [ -f "$CA" ]; then curl -fsSL --connect-timeout 8 --max-time 25 --cacert "$CA" -o "$out" "$url" 2>/dev/null && return 0; fi
+    curl -fsSL --connect-timeout 8 --max-time 25 -o "$out" "$url" 2>/dev/null && return 0
   fi
   if command -v wget >/dev/null 2>&1; then
-    if [ -f "$CA" ]; then wget -q --ca-certificate="$CA" -O "$out" "$url" 2>/dev/null && return 0; fi
-    wget -q -O "$out" "$url" 2>/dev/null && return 0
+    if [ -f "$CA" ]; then wget -q --timeout=25 --tries=1 --ca-certificate="$CA" -O "$out" "$url" 2>/dev/null && return 0; fi
+    wget -q --timeout=25 --tries=1 -O "$out" "$url" 2>/dev/null && return 0
   fi
   if command -v python3 >/dev/null 2>&1; then
     python3 - "$url" "$out" "$CA" <<PYEOF 2>/dev/null && return 0

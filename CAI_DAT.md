@@ -71,7 +71,7 @@ DPAD chi di chuyen dung 1 o moi lan bam, khong nhay. Ty le cot giu vi tri khi ch
 
 ## 8. Cap nhat tu xa (OTA)
 
-1. Mo app, OTA tu kiem tra ban moi moi lan chay (ghi vao `Terminal-ota.log`).
+1. Mo app la tu dong check + tai + cai ban moi (khong hoi, ghi vao `Terminal-ota.log`). Tat tu dong: mo app voi `TERMINAL_NO_OTA=1`.
 2. De cap nhat thu cong trong terminal: `sh ota-update.sh` (hoi truoc khi cai) hoac `sh ota-update.sh --apply`.
 3. OTA tai manifest tu `https://raw.githubusercontent.com/nlkcodenew/trimui-terminal/main/manifest.json`, verify sha256 tung file, cai atomically, luu VERSION moi. Xong thoat app mo lai.
 4. Tat auto-check: mo `launch.sh` voi `TERMINAL_NO_OTA=1`.
