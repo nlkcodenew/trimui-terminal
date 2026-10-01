@@ -19,7 +19,7 @@ touch /tmp/stay_alive 2>/dev/null
 if [ -x "$APP/ota-update.sh" ] && [ "$TERMINAL_NO_OTA" != "1" ]; then
   sh "$APP/ota-update.sh" --check >> "$ERRLOG" 2>&1 || true
 fi
-"$BIN" -scale 2 -fontsize 28 "$@" 2>> "$ERRLOG"
+"$BIN" -scale 1 -fontsize 16 "$@" 2>> "$ERRLOG"
 CODE=$?
 rm -f /tmp/stay_alive 2>/dev/null
 exit $CODE

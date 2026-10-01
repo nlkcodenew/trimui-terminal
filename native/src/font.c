@@ -713,6 +713,33 @@ void cleanup_ttf_font(void) {
 }
 
 int is_ttf_loaded(void) { return ttf_font != NULL; }
+static TTF_Font *osk_ttf_font = NULL;
+static int osk_ttf_char_width = 12;
+static int osk_ttf_char_height = 16;
+static int osk_ttf_font_shade = 1;
+int init_osk_ttf_font(const char *font_path, int font_size, int shade) {
+    if (TTF_Init() == -1) return 0;
+    if (osk_ttf_font) { TTF_CloseFont(osk_ttf_font); osk_ttf_font = NULL; }
+    osk_ttf_font = TTF_OpenFont(font_path, font_size);
+    if (!osk_ttf_font) return 0;
+    TTF_SizeText(osk_ttf_font, "M", &osk_ttf_char_width, &osk_ttf_char_height);
+    osk_ttf_font_shade = shade;
+    return 1;
+}
+int is_osk_ttf_loaded(void) { return osk_ttf_font != NULL; }
+int get_osk_ttf_char_width(void) { return osk_ttf_char_width; }
+int get_osk_ttf_char_height(void) { return osk_ttf_char_height; }
+void draw_string_osk_ttf(SDL_Surface *surface, const char *text, int x, int y, SDL_Color fg, SDL_Color bg) {
+    if (!osk_ttf_font || !surface || !text || !*text) return;
+    SDL_Surface *ts = NULL;
+    if (osk_ttf_font_shade == 2) ts = TTF_RenderText_Shaded(osk_ttf_font, text, fg, bg);
+    else if (osk_ttf_font_shade == 1) ts = TTF_RenderText_Blended(osk_ttf_font, text, fg);
+    else ts = TTF_RenderText_Solid(osk_ttf_font, text, fg);
+    if (!ts) return;
+    SDL_Rect dest = {x, y, ts->w, ts->h};
+    SDL_BlitSurface(ts, NULL, surface, &dest);
+    SDL_FreeSurface(ts);
+}
 
 int get_ttf_char_width(void) { return ttf_char_width; }
 

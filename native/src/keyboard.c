@@ -49,6 +49,7 @@ static int location = 0;
 static int mod_state = 0;
 static int quit_combo_select = 0;
 static int quit_combo_start = 0;
+static int quit_confirm_until = 0;
 
 int active = 1;
 int show_help = 1;
@@ -69,8 +70,13 @@ void init_keyboard(int _embedded_font_name, int _use_embedded_font_for_keyboard)
     selected_i = selected_j = shifted = location = 0;
     mod_state = 0;
 
-    embedded_font_char_width = get_embedded_font_char_width(embedded_font_name);
-    embedded_font_char_height = get_embedded_font_char_height(embedded_font_name);
+    if (is_osk_ttf_loaded()) {
+        embedded_font_char_width = get_osk_ttf_char_width();
+        embedded_font_char_height = get_osk_ttf_char_height();
+    } else {
+        embedded_font_char_width = get_embedded_font_char_width(embedded_font_name);
+        embedded_font_char_height = get_embedded_font_char_height(embedded_font_name);
+    }
     ttf_char_width = get_ttf_char_width();
     ttf_char_height = get_ttf_char_height();
 
@@ -93,7 +99,7 @@ char *help1 =
     "  SELECT:     tab\n"
     "  L2:         left\n"
     "  R2:         right\n"
-    "  MENU:       quit (or SELECT+START)\n\n"
+    "  MENU:       quit (or SELECT+START; or B twice)\n\n"
     "Cheatcheet (tutorial at www.shellscript.sh):\n"
     "  TAB key         complete path\n"
     "  UP/DOWN keys    navigate history\n"
@@ -117,7 +123,7 @@ char *help2 =
     "  SELECT:     tab\n"
     "  L2:         left\n"
     "  R2:         right\n"
-    "  MENU:       quit (or SELECT+START)\n\n";
+    "  MENU:       quit (or SELECT+START; or B twice)\n\n";
 
 #define CREDIT "@haoict (c) 2025"
 
@@ -199,6 +205,52 @@ void draw_keyboard(SDL_Surface *surface) {
                 x += embedded_font_char_width * (length + 1);
             }
             y += embedded_font_name == 3 ? embedded_font_char_height + 2 : embedded_font_char_height;
+        }
+    } else if (is_osk_ttf_loaded()) {
+        int cw = get_osk_ttf_char_width();
+        int ch = get_osk_ttf_char_height();
+        int max_w = surface->w - 8;
+        int total_length = -1;
+        for (int i = 0; i < NUM_KEYS && syms[0][0][i]; i++) {
+            total_length += (1 + strlen(syms[0][0][i])) * cw;
+        }
+        float fit = 1.0f;
+        if (total_length > max_w) fit = (float)max_w / (float)total_length;
+        int center_x = (surface->w - (int)(total_length * fit)) / 2;
+        int x = center_x;
+        int y = surface->h - (int)(ch * NUM_ROWS * fit) - KEYBOARD_PADDING;
+        if (y < surface->h / 3) y = surface->h / 3;
+        if (location == 1) y = KEYBOARD_PADDING;
+        SDL_Rect keyboard_rect = {x - 4, y - 3, (int)(total_length * fit) + 8, (int)(ch * NUM_ROWS * fit) + 6};
+        SDL_FillRect(surface, &keyboard_rect, bg_color);
+        for (int j = 0; j < NUM_ROWS; j++) {
+            x = center_x;
+            for (int i = 0; i < row_length[j]; i++) {
+                SDL_Color ttf_shaded_bg;
+                int length = strlen(syms[shifted][j][i]);
+                int kw = (int)((length * cw + cw - 2) * fit);
+                int kh = (int)(ch * fit) - 1;
+                if (kh < 8) kh = 8;
+                SDL_Rect key_rect = {x - 2, y - 1, kw, kh};
+                if (toggled[j][i]) {
+                    if (selected_i == i && selected_j == j) {
+                        ttf_shaded_bg = (SDL_Color){255, 255, 128, 255};
+                        SDL_FillRect(surface, &key_rect, sel_toggled_color);
+                    } else {
+                        ttf_shaded_bg = (SDL_Color){192, 192, 0, 255};
+                        SDL_FillRect(surface, &key_rect, toggled_color);
+                    }
+                } else if (selected_i == i && selected_j == j) {
+                    ttf_shaded_bg = (SDL_Color){128, 255, 128, 255};
+                    SDL_FillRect(surface, &key_rect, sel_color);
+                } else {
+                    ttf_shaded_bg = (SDL_Color){128, 128, 128, 255};
+                    SDL_FillRect(surface, &key_rect, key_color);
+                }
+                draw_string_osk_ttf(surface, syms[shifted][j][i], x, y - 2, (SDL_Color){0, 0, 0, 255}, ttf_shaded_bg);
+                x += (int)((cw * (length + 1)) * fit);
+            }
+            y += (int)(ch * fit);
         }
     } else {
         int total_length = -1;
@@ -347,7 +399,29 @@ static int rgb30_first_jbutton10_pressed = 0;  // TODO: temp fix for RGB30, for 
 #endif
 int handle_keyboard_event(SDL_Event *event) {
 #if defined(BR2) && !defined(RPI)
-    /* SELECT+START an cung luc = thoat (du phong khi nut MENU bi OS nuot). */
+    if ((event->key.type == SDL_KEYDOWN) && !(event->key.keysym.mod & KMOD_SYNTHETIC)) {
+        int now = trimui_ticks_ms();
+        if (event->key.keysym.sym == JOYBUTTON_B) {
+            if (quit_confirm_until && now < quit_confirm_until) {
+                printf("Exit confirmed by B\n");
+                quit_confirm_until = 0;
+                trimui_request_quit();
+                return 1;
+            }
+            quit_confirm_until = now + 4000;
+            trimui_show_quit_confirm();
+            return 1;
+        }
+        if (event->key.keysym.sym == JOYBUTTON_A && quit_confirm_until && now < quit_confirm_until) {
+            quit_confirm_until = 0;
+            trimui_hide_quit_confirm();
+            return 1;
+        }
+        if (quit_confirm_until && now >= quit_confirm_until) {
+            quit_confirm_until = 0;
+            trimui_hide_quit_confirm();
+        }
+    }
     if (event->key.type == SDL_KEYDOWN || event->key.type == SDL_KEYUP) {
         int held_now = (event->key.type == SDL_KEYDOWN);
         if (event->key.keysym.sym == JOYBUTTON_SELECT) quit_combo_select = held_now;
@@ -361,6 +435,7 @@ int handle_keyboard_event(SDL_Event *event) {
         }
     }
 #endif
+
     if (event->key.type == SDL_KEYDOWN && event->key.keysym.sym == KEY_QUIT) {
 #if defined(RGB30)
         if (!rgb30_first_jbutton10_pressed) {
@@ -452,7 +527,6 @@ int handle_keyboard_event(SDL_Event *event) {
             // do nothing
         } else if (event->key.keysym.sym == KEY_UP || event->key.keysym.sym == KEY_DOWN ||
                    event->key.keysym.sym == KEY_LEFT || event->key.keysym.sym == KEY_RIGHT) {
-            /* DPAD di chuyen con tro ban phim ao ngay, khong cho giu 150ms. */
             handle_narrow_keys_held(event->key.keysym.sym);
         } else if (event->key.keysym.sym == KEY_SHIFT) {
             shifted = 1;

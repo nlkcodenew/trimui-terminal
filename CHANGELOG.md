@@ -1,5 +1,9 @@
 # Changelog - trimui-terminal
 
+## v0.2.1 - 2026-10-01
+
+- Sua UI tran man hinh: terminal dung font TTF size 16 (gon), ban phim ao dung font to rieng size 26 co fit-width theo man hinh; scale mac dinh 1.0.
+- Thoat bang B 2 lan: B lan 1 hien "B lan nua de thoat | A de huy", B lan 2 thoat, A huy. Giu MENU va combo SELECT+START.
 ## v0.2.0 - 2026-10-01
 
 - Thoat app: MENU (KEY_QUIT) + combo du phong SELECT+START an cung luc + phim Exit tren ban phim ao (di chuyen toi Exit roi bam A).

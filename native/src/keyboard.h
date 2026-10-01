@@ -57,9 +57,7 @@
 #define JOYBUTTON_MENU -11
 
 #elif defined(TRIMUI_BRICK)
-// TrimUI Brick Pro / Smart Pro S (xac nhan tu trimui-chiaki-ng inputs.py):
-// nut vat ly A=1 B=0 X=3 Y=2 L1=4 R1=5 L2=6 R2=7 SELECT=8 START=9
-// L3=11 R3=12 UP=13 DOWN=14 LEFT=15 RIGHT=16. main.c day sym = -button.
+// TrimUI Brick Pro / Smart Pro S (xac nhan tu trimui-chiaki-ng inputs.py).
 #define JOYBUTTON_A -1
 #define JOYBUTTON_B -0
 #define JOYBUTTON_X -3
@@ -145,6 +143,10 @@
 #endif
 
 void init_keyboard();
+int trimui_ticks_ms(void);
+void trimui_request_quit(void);
+void trimui_show_quit_confirm(void);
+void trimui_hide_quit_confirm(void);
 void draw_keyboard(SDL_Surface *surface);
 int handle_keyboard_event(SDL_Event *event);
 int handle_narrow_keys_held(int sym);

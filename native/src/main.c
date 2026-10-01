@@ -134,6 +134,10 @@ static void window_event_handler(SDL_Event *);
 
 static void update_render(void);
 static Uint32 clear_popup_timer(Uint32 interval, void *param);
+int trimui_ticks_ms(void);
+void trimui_request_quit(void);
+void trimui_show_quit_confirm(void);
+void trimui_hide_quit_confirm(void);
 
 static void (*event_handler[SDL_LASTEVENT])(SDL_Event *) = {[SDL_KEYDOWN] = k_press, [SDL_TEXTINPUT] = text_input, [SDL_WINDOWEVENT] = window_event_handler};
 
@@ -191,33 +195,63 @@ static const char *trimui_system_fonts[] = {
     NULL
 };
 void sdl_load_fonts() {
-    if (opt_font && init_ttf_font(opt_font, opt_fontsize, opt_fontshade)) {
+    if (opt_font && init_ttf_font(opt_font, opt_fontsize > 0 ? opt_fontsize : 16, opt_fontshade)) {
         main_window.char_width = get_ttf_char_width();
         main_window.char_height = get_ttf_char_height();
         fprintf(stderr, "TTF font user: %dx%d\n", main_window.char_width, main_window.char_height);
-        return;
-    }
+    } else {
 #if defined(BR2) && !defined(RPI)
-    /* Brick Pro: ban phim ao phai to, de doc. Tu dong nap TTF he thong size 28. */
-    {
-        int kb_size = (opt_fontsize > 0) ? opt_fontsize : 28;
+        int term_size = 16;
         const char **fp = trimui_system_fonts;
+        int ok = 0;
         while (*fp) {
-            if (init_ttf_font(*fp, kb_size, opt_fontshade)) {
+            if (init_ttf_font(*fp, term_size, opt_fontshade)) {
                 main_window.char_width = get_ttf_char_width();
                 main_window.char_height = get_ttf_char_height();
-                fprintf(stderr, "TTF font auto (osk): %s size %d -> %dx%d\n", *fp, kb_size, main_window.char_width, main_window.char_height);
-                return;
+                fprintf(stderr, "TTF font auto (term): %s size %d -> %dx%d\n", *fp, term_size, main_window.char_width, main_window.char_height);
+                ok = 1;
+                break;
+            }
+            fp++;
+        }
+        if (!ok) {
+            main_window.char_width = get_embedded_font_char_width(embedded_font_name);
+            main_window.char_height = get_embedded_font_char_height(embedded_font_name);
+            fprintf(stderr, "Using embedded bitmap font %d (%dx%d)\n", embedded_font_name, main_window.char_width, main_window.char_height);
+        }
+#else
+        main_window.char_width = get_embedded_font_char_width(embedded_font_name);
+        main_window.char_height = get_embedded_font_char_height(embedded_font_name);
+        fprintf(stderr, "Using embedded bitmap font %d (%dx%d)\n", embedded_font_name, main_window.char_width, main_window.char_height);
+#endif
+    }
+#if defined(BR2) && !defined(RPI)
+    {
+        int osk_size = 26;
+        const char **fp = trimui_system_fonts;
+        while (*fp) {
+            if (init_osk_ttf_font(*fp, osk_size, 1)) {
+                fprintf(stderr, "TTF font auto (osk): %s size %d -> %dx%d\n", *fp, osk_size, get_osk_ttf_char_width(), get_osk_ttf_char_height());
+                break;
             }
             fp++;
         }
     }
 #endif
-    main_window.char_width = get_embedded_font_char_width(embedded_font_name);
-    main_window.char_height = get_embedded_font_char_height(embedded_font_name);
-    fprintf(stderr, "Using embedded bitmap font %d (%dx%d)\n", embedded_font_name, main_window.char_width, main_window.char_height);
 }
 
+int trimui_ticks_ms(void) { return (int)SDL_GetTicks(); }
+void trimui_request_quit(void) {
+    SDL_Event q; q.type = SDL_QUIT;
+    SDL_PushEvent(&q);
+}
+void trimui_show_quit_confirm(void) {
+    snprintf(popup_message, sizeof(popup_message), "B lan nua de thoat | A de huy");
+    SDL_AddTimer(4000, clear_popup_timer, NULL);
+}
+void trimui_hide_quit_confirm(void) {
+    popup_message[0] = '\0';
+}
 void sdl_shutdown(void) {
     if (SDL_WasInit(SDL_INIT_EVERYTHING) != 0 && !shutdown_called) {
         shutdown_called = 1;

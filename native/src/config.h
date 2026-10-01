@@ -1,7 +1,6 @@
 /* See LICENSE file for copyright and license details. */
 
 static int borderpx = 2;
-/* TrimUI Stock OS khong co bash; dung busybox sh. */
 char default_shell[] = "/bin/sh";
 
 /* Scrollback configuration */
@@ -9,10 +8,10 @@ int scrollback_lines = 256;  /* Number of lines to keep in scrollback buffer */
 
 static int initial_width = 320;
 static int initial_height = 240;
-static float opt_scale = 2.0;
+static float opt_scale = 1.0;
 static int opt_rotate = 0;   // rotation angle: 0, 90, 180, 270
 static char *opt_font = NULL;  // "1" or "2" for embedded fonts, or path to TTF font file
-static int opt_fontsize = 28;  // co mac dinh cho ban phim ao to, de doc tren Brick Pro
+static int opt_fontsize = 16;
 static int opt_fontshade = 0;  // 0=solid, 1=blended, 2=shaded, only used if opt_font is set to a TTF font
 static int opt_use_embedded_font_for_keyboard = 0;
 
