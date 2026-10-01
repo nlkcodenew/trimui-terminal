@@ -1,0 +1,40 @@
+name: build
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cross toolchain
+        run: |
+          set -e
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends make file gcc-aarch64-linux-gnu libc6-dev-arm64-cross libsdl2-dev:arm64 libsdl2-ttf-dev:arm64
+      - name: Build trimui-brick
+        run: |
+          set -e
+          VERSION="$(cat VERSION | tr -d " \r\n")"
+          cd native
+          export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+          export PKG_CONFIG_SYSROOT_DIR=/
+          make build PLATFORM=trimui-brick VERSION="$VERSION" CC=aarch64-linux-gnu-gcc
+          file trimui-terminal
+          cp trimui-terminal ../files/bin/trimui-terminal
+      - name: Verify release
+        run: python3 tools/verify_release.py
+      - name: Build ZIP
+        run: python3 tools/make_release.py
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: trimui-terminal-aarch64
+          path: |
+            files/bin/trimui-terminal
+            dist/*.zip
+            dist/*.sha256
+            manifest.json

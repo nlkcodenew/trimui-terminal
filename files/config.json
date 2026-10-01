@@ -1,0 +1,6 @@
+{
+  "label": "Trimui Terminal",
+  "icon": "icon.png",
+  "launch": "launch.sh",
+  "description": "Terminal + BT survey for Brick Pro"
+}

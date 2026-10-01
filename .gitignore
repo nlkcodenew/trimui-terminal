@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+dist/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+Terminal-loi.txt
+Bt-survey-*.log
