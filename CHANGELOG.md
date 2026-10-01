@@ -1,5 +1,8 @@
 # Changelog - trimui-terminal
 
+## v0.2.2 - 2026-10-01
+
+- Sua DPAD nhay loan ban phim ao: bo xu ly trung (KEYDOWN + main_loop held-repeat), viet lai handle_narrow_keys_held bang ty le cot (khong con visual_offset) de len/xuong giua cac hang khac do dai khong nhay lung tung. OSK dung scale co dinh 3/4, khong fit-width dong theo man hinh, nen vi tri ve va chi so i luon khop nhau.
 ## v0.2.1 - 2026-10-01
 
 - Sua UI tran man hinh: terminal dung font TTF size 16 (gon), ban phim ao dung font to rieng size 26 co fit-width theo man hinh; scale mac dinh 1.0.

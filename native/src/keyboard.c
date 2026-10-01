@@ -207,30 +207,32 @@ void draw_keyboard(SDL_Surface *surface) {
             y += embedded_font_name == 3 ? embedded_font_char_height + 2 : embedded_font_char_height;
         }
     } else if (is_osk_ttf_loaded()) {
-        int cw = get_osk_ttf_char_width();
-        int ch = get_osk_ttf_char_height();
-        int max_w = surface->w - 8;
+        /* OSK co dinh: giam font 26 -> vua 1280, khong fit-width dong. */
+        int cw = (get_osk_ttf_char_width() * 3) / 4;
+        int ch = (get_osk_ttf_char_height() * 3) / 4;
         int total_length = -1;
         for (int i = 0; i < NUM_KEYS && syms[0][0][i]; i++) {
             total_length += (1 + strlen(syms[0][0][i])) * cw;
         }
-        float fit = 1.0f;
-        if (total_length > max_w) fit = (float)max_w / (float)total_length;
-        int center_x = (surface->w - (int)(total_length * fit)) / 2;
+        if (total_length > surface->w - 8) {
+            cw = (cw * (surface->w - 8)) / total_length;
+            ch = (ch * (surface->w - 8)) / total_length;
+            total_length = surface->w - 8;
+        }
+        int center_x = (surface->w - total_length) / 2;
         int x = center_x;
-        int y = surface->h - (int)(ch * NUM_ROWS * fit) - KEYBOARD_PADDING;
-        if (y < surface->h / 3) y = surface->h / 3;
+        int y = surface->h - ch * NUM_ROWS - KEYBOARD_PADDING;
+        if (y < surface->h / 2) y = surface->h / 2;
         if (location == 1) y = KEYBOARD_PADDING;
-        SDL_Rect keyboard_rect = {x - 4, y - 3, (int)(total_length * fit) + 8, (int)(ch * NUM_ROWS * fit) + 6};
+        SDL_Rect keyboard_rect = {x - 4, y - 3, total_length + 8, ch * NUM_ROWS + 6};
         SDL_FillRect(surface, &keyboard_rect, bg_color);
         for (int j = 0; j < NUM_ROWS; j++) {
             x = center_x;
             for (int i = 0; i < row_length[j]; i++) {
                 SDL_Color ttf_shaded_bg;
                 int length = strlen(syms[shifted][j][i]);
-                int kw = (int)((length * cw + cw - 2) * fit);
-                int kh = (int)(ch * fit) - 1;
-                if (kh < 8) kh = 8;
+                int kw = length * cw + cw - 2;
+                int kh = ch - 1;
                 SDL_Rect key_rect = {x - 2, y - 1, kw, kh};
                 if (toggled[j][i]) {
                     if (selected_i == i && selected_j == j) {
@@ -248,9 +250,9 @@ void draw_keyboard(SDL_Surface *surface) {
                     SDL_FillRect(surface, &key_rect, key_color);
                 }
                 draw_string_osk_ttf(surface, syms[shifted][j][i], x, y - 2, (SDL_Color){0, 0, 0, 255}, ttf_shaded_bg);
-                x += (int)((cw * (length + 1)) * fit);
+                x += cw * (length + 1);
             }
-            y += (int)(ch * fit);
+            y += ch;
         }
     } else {
         int total_length = -1;
@@ -525,9 +527,6 @@ int handle_keyboard_event(SDL_Event *event) {
         // printf("handle_keyboard_event: type: %s, sym: %d (%s), scancode:%d\n", event->key.type == SDL_KEYDOWN ? "keydown" : "keyup", event->key.keysym.sym, SDL_GetKeyName(event->key.keysym.sym), event->key.keysym.scancode);
         if (show_help) {
             // do nothing
-        } else if (event->key.keysym.sym == KEY_UP || event->key.keysym.sym == KEY_DOWN ||
-                   event->key.keysym.sym == KEY_LEFT || event->key.keysym.sym == KEY_RIGHT) {
-            handle_narrow_keys_held(event->key.keysym.sym);
         } else if (event->key.keysym.sym == KEY_SHIFT) {
             shifted = 1;
             toggled[4][0] = 1;
@@ -599,35 +598,25 @@ int handle_narrow_keys_held(int sym) {
             selected_i--;
         else
             selected_i = row_length[selected_j] - 1;
-        visual_offset = compute_visual_offset(selected_i, selected_j);
     } else if (sym == KEY_RIGHT) {
         if (selected_i < row_length[selected_j] - 1)
             selected_i++;
         else
             selected_i = 0;
-        visual_offset = compute_visual_offset(selected_i, selected_j);
-    } else if (sym == KEY_UP) {
-        if (selected_j > 0) {
-            selected_i = compute_new_col(visual_offset, selected_j, selected_j - 1);
-            selected_j--;
+    } else if (sym == KEY_UP || sym == KEY_DOWN) {
+        int old_len = row_length[selected_j];
+        int new_j;
+        if (sym == KEY_UP) {
+            new_j = (selected_j > 0) ? selected_j - 1 : NUM_ROWS - 1;
         } else {
-            selected_i = compute_new_col(visual_offset, selected_j, NUM_ROWS - 1);
-            selected_j = NUM_ROWS - 1;
+            new_j = (selected_j < NUM_ROWS - 1) ? selected_j + 1 : 0;
         }
-        if (selected_i >= row_length[selected_j]) {
-            selected_i = row_length[selected_j] - 1;
-        }
-    } else if (sym == KEY_DOWN) {
-        if (selected_j < NUM_ROWS - 1) {
-            selected_i = compute_new_col(visual_offset, selected_j, selected_j + 1);
-            selected_j++;
-        } else {
-            selected_i = compute_new_col(visual_offset, selected_j, 0);
-            selected_j = 0;
-        }
-        if (selected_i < 0) {
-            selected_i = 0;
-        }
+        int new_len = row_length[new_j];
+        /* Ty le cot: giu vi tri tuong doi khi cac hang dai khac nhau. */
+        selected_i = (selected_i * new_len) / old_len;
+        if (selected_i >= new_len) selected_i = new_len - 1;
+        selected_j = new_j;
     }
+    visual_offset = compute_visual_offset(selected_i, selected_j);
     return 1;
 }

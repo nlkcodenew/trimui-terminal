@@ -51,7 +51,11 @@ sh bt-survey.sh
 3. File `Bt-survey-YYYYMMDD-HHMMSS.log` nam ngay canh `launch.sh`.
 4. Tat app, cam the vao may tinh, copy file log ra de gui danh gia Bluetooth.
 
-## 5. Thoat app
+## 5. Dieu huong ban phim ao
+
+DPAD chi di chuyen dung 1 o moi lan bam, khong nhay. Ty le cot giu vi tri khi chuyen hang nen chon o cung vi tri tuong doi tren moi hang (vi tri F5 o hang 0 giu vi tri o khoang giua hang 1, 2, 3, 4). Khi xuong cuoi (Space/Exit), tu nhay o gan nhat theo chieu ngang.
+
+## 6. Thoat app
 
 - Bam B 1 lan: hien "B lan nua de thoat | A de huy".
 - Bam B lan 2 trong 4 giay: thoat. Bam A: huy, tiep tuc dung.
@@ -65,14 +69,14 @@ sh bt-survey.sh
 - START: enter. SELECT: tab. MENU: thoat.
 - L2/R2: cuon lich su khi tat ban phim.
 
-## 7. Cap nhat tu xa (OTA)
+## 8. Cap nhat tu xa (OTA)
 
 1. Mo app, OTA tu kiem tra ban moi moi lan chay (ghi vao `Terminal-ota.log`).
 2. De cap nhat thu cong trong terminal: `sh ota-update.sh` (hoi truoc khi cai) hoac `sh ota-update.sh --apply`.
 3. OTA tai manifest tu `https://raw.githubusercontent.com/nlkcodenew/trimui-terminal/main/manifest.json`, verify sha256 tung file, cai atomically, luu VERSION moi. Xong thoat app mo lai.
 4. Tat auto-check: mo `launch.sh` voi `TERMINAL_NO_OTA=1`.
 
-## 8. Loi thuong gap
+## 9. Loi thuong gap
 
 | Hien tuong | Cach xu ly |
 | --- | --- |
