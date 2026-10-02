@@ -681,6 +681,12 @@ static int ttf_char_width = 6;   // fallback to bitmap size
 static int ttf_char_height = 8;  // fallback to bitmap size
 static int ttf_font_shade = 0;
 
+/* OSK TTF globals (khai bao som de cleanup thay duoc) */
+static TTF_Font *osk_ttf_font = NULL;
+static int osk_ttf_char_width = 12;
+static int osk_ttf_char_height = 16;
+static int osk_ttf_font_shade = 1;
+
 /* TTF font */
 int init_ttf_font(const char *font_path, int font_size, int shade) {
     if (TTF_Init() == -1) {
@@ -708,15 +714,15 @@ void cleanup_ttf_font(void) {
     if (ttf_font) {
         TTF_CloseFont(ttf_font);
         ttf_font = NULL;
-        TTF_Quit();
     }
+    if (osk_ttf_font) {
+        TTF_CloseFont(osk_ttf_font);
+        osk_ttf_font = NULL;
+    }
+    TTF_Quit();
 }
 
 int is_ttf_loaded(void) { return ttf_font != NULL; }
-static TTF_Font *osk_ttf_font = NULL;
-static int osk_ttf_char_width = 12;
-static int osk_ttf_char_height = 16;
-static int osk_ttf_font_shade = 1;
 int init_osk_ttf_font(const char *font_path, int font_size, int shade) {
     if (TTF_Init() == -1) return 0;
     if (osk_ttf_font) { TTF_CloseFont(osk_ttf_font); osk_ttf_font = NULL; }
@@ -727,10 +733,14 @@ int init_osk_ttf_font(const char *font_path, int font_size, int shade) {
     return 1;
 }
 int is_osk_ttf_loaded(void) { return osk_ttf_font != NULL; }
-/* Chon co TTF lon nhat ma van vua be ngang (46*cw) va 6 hang vua 55% man hinh. */
+/* Chon co TTF lon nhat ma van vua be ngang (46*cw) va 6 hang vua 55% man hinh.
+   Neu khong co nao vua (font ti le rong), fallback size 16 de OSK khong
+   roi ve bitmap ti hon giua man hinh 1280. */
 int pick_osk_ttf_font(const char *font_path, int max_w, int max_h) {
     static const int sizes[] = {48, 44, 40, 36, 32, 30, 28, 26, 24, 22, 20, 18, 16, 0};
     if (TTF_Init() == -1) return 0;
+    if (max_w <= 0) max_w = 1264;
+    if (max_h <= 0) max_h = 396;
     for (int k = 0; sizes[k]; k++) {
         TTF_Font *f = TTF_OpenFont(font_path, sizes[k]);
         if (!f) continue;
@@ -745,6 +755,23 @@ int pick_osk_ttf_font(const char *font_path, int max_w, int max_h) {
             return sizes[k];
         }
         TTF_CloseFont(f);
+    }
+    /* Fallback: mo co 16 bang duoc de OSK van dung TTF to, doc duoc. */
+    {
+        TTF_Font *f = TTF_OpenFont(font_path, 16);
+        if (f) {
+            int cw = 0, ch = 0;
+            TTF_SizeText(f, "M", &cw, &ch);
+            if (cw > 0 && ch > 0) {
+                if (osk_ttf_font) TTF_CloseFont(osk_ttf_font);
+                osk_ttf_font = f;
+                osk_ttf_char_width = cw;
+                osk_ttf_char_height = ch;
+                osk_ttf_font_shade = 1;
+                return 16;
+            }
+            TTF_CloseFont(f);
+        }
     }
     return 0;
 }

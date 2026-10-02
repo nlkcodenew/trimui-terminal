@@ -41,6 +41,8 @@ STREscape strescseq;
 int cmdfd = -1;
 int iofd = -1;
 static pid_t pid;
+volatile int trimui_child_exited = 0;
+volatile int trimui_thread_should_exit = 0;
 
 /* UTF-8 functions */
 int utf8_decode(char *s, long *u) {
@@ -195,25 +197,32 @@ void exec_sh(void) {
 
 void sig_chld(int a) {
     int stat = 0;
+    pid_t w;
     (void)a;
 
-    if (waitpid(pid, &stat, 0) < 0) die("Waiting for pid %hd failed: %s\n", pid, strerror(errno));
-
-    if (WIFEXITED(stat)) {
-        exit(WEXITSTATUS(stat));
-    } else {
-        exit(EXIT_FAILURE);
+    /* Reap tat ca child da chet, KHONG exit() trong signal handler
+       (exit/WaitThread o day se deadlock khi main dang join tty thread).
+       Danh dau de main_loop tu thoat. */
+    while ((w = waitpid(-1, &stat, WNOHANG)) > 0) {
+        (void)w;
     }
+    trimui_child_exited = 1;
 }
 
 void trimui_kill_shell(void) {
     extern pid_t trimui_shell_pid(void);
     pid_t p = trimui_shell_pid();
-    if (p > 0) {
-        kill(p, SIGTERM);
-        usleep(200 * 1000);
-        if (kill(p, 0) == 0) kill(p, SIGKILL);
+    if (p <= 0) return;
+    /* Kill ca process group (child da setsid nen la group leader),
+       diet shell con + tien trinh chau giu pty. */
+    kill(p, SIGTERM);
+    kill(-p, SIGTERM);
+    usleep(150 * 1000);
+    if (kill(p, 0) == 0) {
+        kill(p, SIGKILL);
+        kill(-p, SIGKILL);
     }
+    usleep(100 * 1000);
 }
 pid_t trimui_shell_pid(void) { return pid; }
 void tty_new(void) {
@@ -257,7 +266,9 @@ void dump(char c) {
     if (++col % 10 == 0) fprintf(stderr, "\n");
 }
 
-void tty_read(void) {
+/* Tra ve 0 neu doc duoc, -1 neu EOF/loi (thread goi nen break, KHONG die).
+   die() trong thread se goi sdl_shutdown -> SDL_WaitThread chinh no = deadlock. */
+int tty_read(void) {
     static char buf[BUFSIZ];
     static int buflen = 0;
     char *ptr;
@@ -266,8 +277,15 @@ void tty_read(void) {
     long utf8c;
     int ret;
 
+    if (cmdfd < 0) return -1;
     /* append read bytes to unprocessed bytes */
-    if ((ret = read(cmdfd, buf + buflen, LEN(buf) - buflen)) < 0) die("Couldn't read from shell: %s\n", strerror(errno));
+    ret = read(cmdfd, buf + buflen, LEN(buf) - buflen);
+    if (ret <= 0) {
+        if (ret == 0) return -1; /* EOF: shell da chet */
+        if (errno == EINTR || errno == EAGAIN) return 0;
+        /* EIO/EBADF/EPIPE: pty da chet sau kill -> thoat thread, khong die */
+        return -1;
+    }
 
     /* process every complete utf8 char */
     buflen += ret;
@@ -282,13 +300,18 @@ void tty_read(void) {
 
     /* keep any uncomplete utf8 char for the next call */
     memmove(buf, ptr, buflen);
+    return 0;
 }
 
 void tty_write(const char *s, size_t n) {
-    if (cmdfd < 0) return;
-    if (write(cmdfd, s, n) == -1) {
-        if (errno == EIO || errno == EBADF || errno == EPIPE) return;
-        die("write error on tty: %s\n", strerror(errno));
+    ssize_t w;
+    if (cmdfd < 0 || !s || n == 0) return;
+    w = write(cmdfd, s, n);
+    if (w == -1) {
+        /* pty chet/EINTR/EAGAIN: bo qua, khong die (tranh deadlock trong thread) */
+        if (errno == EIO || errno == EBADF || errno == EPIPE || errno == EINTR || errno == EAGAIN) return;
+        fprintf(stderr, "write error on tty: %s\n", strerror(errno));
+        return;
     }
 }
 

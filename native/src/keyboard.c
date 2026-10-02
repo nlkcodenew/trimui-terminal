@@ -173,7 +173,9 @@ void draw_keyboard(SDL_Surface *surface) {
 
     if (!active) return;
 
-    if (use_embedded_font_for_keyboard || !is_ttf_loaded()) {
+    /* Bitmap chi khi user ep hoac ca 2 TTF deu loi. OSK TTF duoc uu tien
+       o nhanh duoi ke ca khi term TTF loi (fix OSK ti hon giua man hinh). */
+    if (use_embedded_font_for_keyboard || (!is_ttf_loaded() && !is_osk_ttf_loaded())) {
         int total_length = -1;
         for (int i = 0; i < NUM_KEYS && syms[0][0][i]; i++) {
             total_length += (1 + strlen(syms[0][0][i])) * embedded_font_char_width;

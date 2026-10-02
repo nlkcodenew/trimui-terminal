@@ -155,7 +155,10 @@ char *opt_io = NULL;
 
 static int embedded_font_name = 1;  // 1 or 2
 static volatile int thread_should_exit = 0;
+static volatile int tty_thread_done = 0;
 static int shutdown_called = 0;
+extern volatile int trimui_thread_should_exit;
+extern volatile int trimui_child_exited;
 
 char popup_message[256];
 
@@ -264,14 +267,23 @@ void sdl_shutdown(void) {
     if (SDL_WasInit(SDL_INIT_EVERYTHING) != 0 && !shutdown_called) {
         shutdown_called = 1;
         fprintf(stderr, "SDL shutting down\n");
+        /* Chan SIGCHLD handler tu dong exit (se deadlock voi WaitThread). */
+        signal(SIGCHLD, SIG_DFL);
         thread_should_exit = 1;
+        trimui_thread_should_exit = 1;
         trimui_kill_shell();
         if (thread) {
-            printf("Signaling ttythread to exit...\n");
-            tty_write("n", 1);
-            tty_write("\033[?1000l", 7);
-            /* select() timeout 200ms + shell bi kill -> thread tu thoat nhanh. */
-            SDL_WaitThread(thread, NULL);
+            /* Cho toi da ~2s, khong doi vo han (fix treo B lan 2). */
+            int waited = 0;
+            while (!tty_thread_done && waited < 2000) {
+                SDL_Delay(50);
+                waited += 50;
+            }
+            if (tty_thread_done) {
+                SDL_WaitThread(thread, NULL);
+            } else {
+                fprintf(stderr, "tty thread stuck after 2s, skip join (exit se thu hoi)\n");
+            }
             thread = NULL;
         }
         extern int cmdfd;
@@ -356,9 +368,6 @@ void sdl_init(void) {
 #endif
     SDL_StartTextInput();
 
-    /* font */
-    sdl_load_fonts();
-
     /* colors */
     init_color_map();
 
@@ -378,6 +387,10 @@ void sdl_init(void) {
 #endif
         printf("Setting resolution to: %dx%d\n", main_window.width, main_window.height);
     }
+
+    /* font: load SAU khi da biet kich thuoc man hinh that de OSK
+       pick dung co full-width (truoc day load khi width=0 nen sai). */
+    sdl_load_fonts();
 
     main_window.window = SDL_CreateWindow("Trimui Terminal", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, main_window.width, main_window.height, SDL_WINDOW_SHOWN);
     if (!main_window.window) {
@@ -975,8 +988,8 @@ int tty_thread(void *unused) {
     event.user.data2 = NULL;
 
     for (i = 0;; i++) {
-        if (thread_should_exit) break;
-        if (cmdfd < 0) break;
+        if (thread_should_exit || trimui_thread_should_exit) break;
+        if (cmdfd < 0 || cmdfd >= FD_SETSIZE) break;
         FD_ZERO(&rfd);
         FD_SET(cmdfd, &rfd);
         {
@@ -998,7 +1011,7 @@ int tty_thread(void *unused) {
          * feel like the system is stuttering.
          */
         if (i < 1000 && FD_ISSET(cmdfd, &rfd)) {
-            tty_read();
+            if (tty_read() < 0) break; /* EOF/pty chet -> thoat, khong die */
 
             /*
              * Just wait a bit so it isn't disturbing the
@@ -1015,6 +1028,7 @@ int tty_thread(void *unused) {
         SDL_PushEvent(&event);
     }
 
+    tty_thread_done = 1;
     return 0;
 }
 
@@ -1058,6 +1072,11 @@ void main_loop(void) {
     Uint8 joy0_hat0_last_state = 0;
 #endif
     while (running) {
+        /* Shell chet (go exit) -> ve menu may, khong treo. */
+        if (trimui_child_exited && !thread_should_exit) {
+            running = 0;
+            break;
+        }
         while (SDL_PollEvent(&ev))
         // while (SDL_WaitEvent(&ev))
         {
@@ -1197,6 +1216,7 @@ void main_loop(void) {
 
 int main(int argc, char *argv[]) {
     setenv("SDL_NOMOUSE", "1", 1);
+    signal(SIGPIPE, SIG_IGN); /* write ra pty chet tra EPIPE, khong kill process */
     int is_scale_set_by_user = 0;
 
     for (int i = 1; i < argc; i++) {

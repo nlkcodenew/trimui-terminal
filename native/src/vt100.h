@@ -132,12 +132,14 @@ extern Term term;
 extern CSIEscape csiescseq;
 extern STREscape strescseq;
 extern int cmdfd;
+extern volatile int trimui_child_exited;
+extern volatile int trimui_thread_should_exit;
 
 /* TTY functions */
 void tty_new(void);
 void trimui_kill_shell(void);
 pid_t trimui_shell_pid(void);
-void tty_read(void);
+int tty_read(void);
 void tty_write(const char *s, size_t n);
 void tty_resize(void);
 

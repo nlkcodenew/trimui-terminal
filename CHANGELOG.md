@@ -1,3 +1,8 @@
+## v0.2.5 - 2026-10-02
+
+- Sua OTA khong bao gio tu chay: parse version dung sys.argv (ban cu loi quote khien python SyntaxError, REM rong, luon "manifest khong co version"); so sanh version thuan shell (khong phu thuoc sort -V cua BusyBox); timeout fail-fast (curl/wget 5s+10s, python 10s/15s); sua vong apply pipe-while (exit trong subshell khong tac dung); launch.sh gioi han OTA 30s bang timeout va log rieng Terminal-ota.log.
+- Sua B lan 2 treo that: sig_chld khong exit() trong signal handler nua (reap WNOHANG + co child_exited, main_loop tu thoat); tty_read tra ve -1 thay vi die() trong thread (die -> WaitThread chinh no = deadlock); kill ca process group; SIGPIPE ignore; sdl_shutdown cho toi da 2s roi bo qua join thay vi doi vo han; go shell typed exit cung ve menu.
+- Sua OSK thu nho that: load font SAU khi biet kich thuoc man hinh that (truoc day load khi width=0); pick fallback size 16 neu khong co nao vua; draw uu tien OSK TTF ke ca khi term TTF loi; cleanup dong ca 2 font.
 ## v0.2.4 - 2026-10-01
 
 - Sua OSK thu nho: chon co TTF lon nhat vua that be ngang full 1280 va 6 hang vua 55% chieu cao (pick_osk_ttf_font thu size 48->16), dung kich thuoc glyph thuc te, khong scale 3/4 cung.
