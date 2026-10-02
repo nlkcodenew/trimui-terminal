@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <math.h>
 #include <limits.h>
 #include <locale.h>
 #include <pty.h>
@@ -284,10 +285,16 @@ void sdl_load_fonts() {
 }
 
 /* ---------- Intro NLK (logo khoi dong) ----------
-   Ve bang SDL_ttf trong chinh app. Phuong cach cu (launch.sh goi fim/fbv/fbi)
-   vo dung tren firmware nay: may thuong KHONG co trinh xem framebuffer nao,
-   nen intro khong bao gio hien. Ve trong app thi luon co hinh anh.
-   Thoi gian ~1s (app shell), bam phim bat ky de bo qua. */
+   Port nguyen khuon tu Music-Player (files/musicplayer/ui.py: _play_intro,
+   _build_intro_glyphs, _render_intro_frame, _render_intro_glyphs) de chuyen
+   C cua app nay, de logo tren may giong het Music-Player va chiaki-ng:
+     - nen (8,8,12), chu do Netflix (229,9,20), quang (60,5,8), quet trang
+     - chu bay len lan luot, nhay overshoot, gian chu 4 -> 30, quang lech
+       +4/+6, tia sang trang quet N -> L -> K
+     - font "giant" = hero x 3 (Music-Player hero 44 -> giant 132), scale theo
+       man hinh; moi he so hinh anh nhan them k = giant/132
+     - 2.2 giay, bam phim bat ky de bo qua ngay
+   Ve trong app (SDL cua chinh no) vi firmware nay khong co fim/fbv/fbi. */
 static int intro_disabled(void) {
     const char *env = getenv("TERMINAL_NO_INTRO");
     if (env && strcmp(env, "1") == 0) return 1;
@@ -309,79 +316,186 @@ static int intro_disabled(void) {
     return strncmp(colon, "false", 5) == 0;
 }
 
+/* Gian chu: 4 -> 30 (ease-out) theo progress/0.55, nhan k. */
+static double intro_spread(double progress, double k) {
+    double ease = progress / 0.55;
+    if (ease < 0.0) ease = 0.0;
+    if (ease > 1.0) ease = 1.0;
+    return (4.0 + 26.0 * (1.0 - (1.0 - ease) * (1.0 - ease))) * k;
+}
+
 static void trimui_play_intro(void) {
     if (opt_no_intro || intro_disabled()) return;
     if (!main_window.renderer || main_window.width <= 0 || main_window.height <= 0) return;
 
-    /* Co chu cao ~30% man hinh, giong ty le logo cua app khac. */
-    int size = main_window.height * 30 / 72;
-    if (size < 24) size = 24;
+    /* Music-Player: scale = max(0.75, min(w/1024, h/768)); giant = 132 * scale. */
+    double s = main_window.width / 1024.0;
+    double sy = main_window.height / 768.0;
+    if (sy < s) s = sy;
+    if (s < 0.75) s = 0.75;
+    int giant = (int)(132.0 * s + 0.5);
+    if (giant < 24) giant = 24;
+    double k = giant / 132.0;
+
     TTF_Font *font = NULL;
     const char **fp = trimui_system_fonts;
     while (*fp) {
-        font = TTF_OpenFont(*fp, size);
+        font = TTF_OpenFont(*fp, giant);
         if (font) break;
         fp++;
+    }
+    if (!font) {
+        /* Co chu lon bi SDL_ttf tu choi -> thu nho dan theo thu tu. */
+        static const int smaller[] = {260, 220, 190, 160, 132, 100};
+        for (size_t i = 0; i < sizeof(smaller) / sizeof(smaller[0]) && !font; i++) {
+            if (smaller[i] >= giant) continue;
+            fp = trimui_system_fonts;
+            while (*fp) {
+                font = TTF_OpenFont(*fp, smaller[i]);
+                if (font) break;
+                fp++;
+            }
+            if (font) {
+                giant = smaller[i];
+                k = giant / 132.0;
+            }
+        }
     }
     if (!font) {
         fprintf(stderr, "intro: khong co TTF de ve logo NLK\n");
         return;
     }
-    SDL_Color red = {229, 9, 20, 255};
-    SDL_Color dark = {60, 5, 8, 255};
-    SDL_Surface *main_s = TTF_RenderUTF8_Blended(font, "NLK", red);
-    SDL_Surface *glow_s = TTF_RenderUTF8_Blended(font, "NLK", dark);
-    TTF_CloseFont(font);
-    if (!main_s) {
-        if (glow_s) SDL_FreeSurface(glow_s);
-        return;
-    }
-    SDL_Texture *main_t = SDL_CreateTextureFromSurface(main_window.renderer, main_s);
-    SDL_Texture *glow_t = glow_s ? SDL_CreateTextureFromSurface(main_window.renderer, glow_s) : NULL;
-    int sw = main_s->w, sh = main_s->h;
-    SDL_FreeSurface(main_s);
-    if (glow_s) SDL_FreeSurface(glow_s);
-    if (!main_t) {
-        if (glow_t) SDL_DestroyTexture(glow_t);
-        return;
-    }
-    /* Co vua man hinh nho: scale xuong + chieu cao toi da 62% man hinh. */
-    double scale = 1.0;
-    if (main_window.width - 80 < sw) scale = (double)(main_window.width - 80) / (double)sw;
-    if (main_window.height * 62 / 100 < sh) {
-        double by_h = (double)(main_window.height * 62 / 100) / (double)sh;
-        if (by_h < scale) scale = by_h;
-    }
-    if (scale < 0.05) scale = 0.05;
-    int dw = (int)(sw * scale), dh = (int)(sh * scale);
-    int dx = (main_window.width - dw) / 2, dy = (main_window.height - dh) / 2;
 
-    const Uint32 duration_ms = 1200;
+    SDL_Color dark = {60, 5, 8, 255};
+    SDL_Color bright = {229, 9, 20, 255};
+    SDL_Color white = {255, 255, 255, 255};
+    static const char *letters = "NLK";
+    SDL_Surface *surf_dark[3] = {NULL, NULL, NULL};
+    SDL_Surface *surf_bright[3] = {NULL, NULL, NULL};
+    SDL_Surface *surf_white[3] = {NULL, NULL, NULL};
+    SDL_Texture *tex_dark[3] = {NULL, NULL, NULL};
+    SDL_Texture *tex_bright[3] = {NULL, NULL, NULL};
+    SDL_Texture *tex_white[3] = {NULL, NULL, NULL};
+    int gw[3] = {0, 0, 0}, gh[3] = {0, 0, 0};
+    for (int i = 0; i < 3; i++) {
+        char ch[2];
+        ch[0] = letters[i];
+        ch[1] = '\0';
+        surf_dark[i] = TTF_RenderUTF8_Blended(font, ch, dark);
+        surf_bright[i] = TTF_RenderUTF8_Blended(font, ch, bright);
+        surf_white[i] = TTF_RenderUTF8_Blended(font, ch, white);
+        if (surf_bright[i]) {
+            gw[i] = surf_bright[i]->w;
+            gh[i] = surf_bright[i]->h;
+        }
+        if (surf_dark[i]) tex_dark[i] = SDL_CreateTextureFromSurface(main_window.renderer, surf_dark[i]);
+        if (surf_bright[i]) tex_bright[i] = SDL_CreateTextureFromSurface(main_window.renderer, surf_bright[i]);
+        if (surf_white[i]) tex_white[i] = SDL_CreateTextureFromSurface(main_window.renderer, surf_white[i]);
+    }
+    TTF_CloseFont(font);
+    for (int i = 0; i < 3; i++) {
+        if (surf_dark[i]) SDL_FreeSurface(surf_dark[i]);
+        if (surf_bright[i]) SDL_FreeSurface(surf_bright[i]);
+        if (surf_white[i]) SDL_FreeSurface(surf_white[i]);
+    }
+    int usable = 0;
+    for (int i = 0; i < 3; i++)
+        if (tex_bright[i]) usable++;
+    if (usable < 3) {
+        for (int i = 0; i < 3; i++) {
+            if (tex_dark[i]) SDL_DestroyTexture(tex_dark[i]);
+            if (tex_bright[i]) SDL_DestroyTexture(tex_bright[i]);
+            if (tex_white[i]) SDL_DestroyTexture(tex_white[i]);
+        }
+        fprintf(stderr, "intro: khong render duoc glyph NLK\n");
+        return;
+    }
+    fprintf(stderr, "intro: NLK giant=%d k=%.2f glyphs=%dx%d\n", giant, k, gw[0], gh[0]);
+
+    const double duration_ms = 2200.0;
     Uint32 start = SDL_GetTicks();
     SDL_Event ev;
-    while (SDL_GetTicks() - start < duration_ms) {
+    int skipped = 0;
+    int center_y = main_window.height / 2;
+    double total_glyph = gw[0] + gw[1] + gw[2];
+
+    while (!skipped) {
+        Uint32 elapsed = SDL_GetTicks() - start;
+        if ((double)elapsed >= duration_ms) break;
+        double progress = (double)elapsed / duration_ms;
+        if (progress > 1.0) progress = 1.0;
+
         while (SDL_PollEvent(&ev)) {
             Uint32 type = ev.type;
             if (type == SDL_QUIT || type == SDL_KEYDOWN || type == SDL_JOYBUTTONDOWN ||
                 type == SDL_CONTROLLERBUTTONDOWN || type == SDL_JOYHATMOTION ||
-                type == SDL_CONTROLLERAXISMOTION)
-                goto intro_done; /* bo qua ngay */
+                type == SDL_CONTROLLERAXISMOTION) {
+                skipped = 1;
+                break;
+            }
         }
+        if (skipped) break;
+
+        double spacing = intro_spread(progress, k);
+        double total = total_glyph + spacing * 2.0;
+        /* Music-Player: fit = min(1, (w-80)/total) -> khong tran man hinh nho. */
+        double fit = 1.0;
+        if (total > 0.0 && (main_window.width - 80) / total < fit)
+            fit = (main_window.width - 80) / total;
+        if (fit < 0.05) fit = 0.05;
+        int cursor = (int)((main_window.width - total * fit) / 2.0);
+
         SDL_SetRenderDrawColor(main_window.renderer, 8, 8, 12, 255);
         SDL_RenderClear(main_window.renderer);
-        if (glow_t) {
-            int k = (int)(6 * scale);
-            SDL_Rect g = {dx + k * 2, dy + k * 2, dw, dh};
-            SDL_RenderCopy(main_window.renderer, glow_t, NULL, &g);
+
+        for (int i = 0; i < 3; i++) {
+            int dw = (int)(gw[i] * fit), dh = (int)(gh[i] * fit);
+            int x = cursor + (int)((gw[i] * fit - dw) / 2.0);
+            double enter_at = 0.05 + i * 0.16;
+            double local = (progress - enter_at) / 0.30;
+            if (local > 0.0) {
+                if (local > 1.0) local = 1.0;
+                int rise = (int)((1.0 - local) * 90.0 * k);
+                if (local > 0.65) {
+                    double sn = sin((local - 0.65) / 0.35 * 3.14159265358979323846);
+                    rise += (int)(-14.0 * k * sn);
+                }
+                int y = center_y - dh / 2 + rise;
+                SDL_Texture *tex = (local * 1.5 >= 0.75) ? tex_bright[i] : tex_dark[i];
+                if (local * 1.5 >= 0.75 && tex_dark[i]) {
+                    SDL_Rect glow = {x + (int)(4.0 * fit * k), y + (int)(6.0 * fit * k), dw, dh};
+                    SDL_RenderCopy(main_window.renderer, tex_dark[i], NULL, &glow);
+                }
+                SDL_Rect r = {x, y, dw, dh};
+                SDL_RenderCopy(main_window.renderer, tex, NULL, &r);
+            }
+            cursor += (int)((gw[i] + spacing) * fit);
         }
-        SDL_Rect r = {dx, dy, dw, dh};
-        SDL_RenderCopy(main_window.renderer, main_t, NULL, &r);
+
+        /* Quet sang trang: 0.72 -> 1.00, lan luot N -> L -> K. */
+        if (progress > 0.72) {
+            double sweep = (progress - 0.72) / 0.28;
+            cursor = (int)((main_window.width - total * fit) / 2.0);
+            for (int i = 0; i < 3; i++) {
+                int dw = (int)(gw[i] * fit), dh = (int)(gh[i] * fit);
+                double center = i / 2.0;
+                if (tex_white[i] && fabs(sweep - center * 0.9) < 0.18) {
+                    SDL_Rect r = {cursor + (int)((gw[i] * fit - dw) / 2.0), center_y - dh / 2, dw, dh};
+                    SDL_RenderCopy(main_window.renderer, tex_white[i], NULL, &r);
+                }
+                cursor += (int)((gw[i] + spacing) * fit);
+            }
+        }
+
         SDL_RenderPresent(main_window.renderer);
         SDL_Delay(16);
     }
-intro_done:
-    SDL_DestroyTexture(main_t);
-    if (glow_t) SDL_DestroyTexture(glow_t);
+
+    for (int i = 0; i < 3; i++) {
+        if (tex_dark[i]) SDL_DestroyTexture(tex_dark[i]);
+        if (tex_bright[i]) SDL_DestroyTexture(tex_bright[i]);
+        if (tex_white[i]) SDL_DestroyTexture(tex_white[i]);
+    }
     fprintf(stderr, "intro: NLK xong\n");
 }
 

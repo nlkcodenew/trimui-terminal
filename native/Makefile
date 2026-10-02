@@ -5,7 +5,7 @@ CROSS_COMPILE ?=
 CC = $(CROSS_COMPILE)gcc
 SYSROOT ?=
 CFLAGS = -Os -Wall -I. -DVERSION=\"$(VERSION)\" -D_GNU_SOURCE=1 -D_REENTRANT -std=gnu11 -flto -Wno-unused-result
-LDFLAGS = -lSDL2 -lSDL2_ttf -lpthread -lutil -s
+LDFLAGS = -lSDL2 -lSDL2_ttf -lpthread -lutil -lm -s
 ifeq ($(PLATFORM),trimui-brick)
 CFLAGS += -DBR2 -DTRIMUI_BRICK
 else ifeq ($(PLATFORM),smart-pro-s)

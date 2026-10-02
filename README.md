@@ -39,9 +39,11 @@ Tham số khi chạy: `-scale 1.0`, `-font 1..5 | /path/font.ttf`, `-fontsize N`
 - Chạy tay trong terminal: `sh ota-update.sh` (bản cũ hỏi y/N), `sh ota-update.sh --apply`, `sh ota-update.sh --check`.
 - Tắt tự động: mở app với `TERMINAL_NO_OTA=1`.
 
-## Intro NLK (~1.2s)
+## Intro NLK (2.2s)
 
-Mở app hiện logo chữ **NLK** đỏ (#E50914) trên nền gần đen, **do chính binary vẽ bằng SDL_ttf** ngay khi app mở (không phụ thuộc `fim`/`fbv`/`fbi` — firmware này không có trình xem framebuffer nào nên cách cũ không bao giờ hiện được). Chữ cao ~30% màn hình, canh giữa, tự co vừa màn hình nhỏ. Bấm phím bất kỳ là bỏ qua ngay.
+Mở app hiện logo chữ **NLK** đỏ (#E50914) trên nền gần đen, **do chính binary vẽ bằng SDL_ttf** ngay khi app mở (không phụ thuộc `fim`/`fbv`/`fbi` — firmware này không có trình xem framebuffer nào nên cách cũ không bao giờ hiện được).
+
+Hiệu ứng **giống hệt Music-Player**: chữ bay lên lần lượt, nảy nhẹ, giãn ra, đổi từ đỏ sẫm sang đỏ tươi kèm quầng đỏ, rồi tia sáng trắng quét qua N → L → K. Tổng 2.2 giây, bấm phím bất kỳ là bỏ qua ngay. Cỡ chữ `giant = 132 × max(0.75, min(w/1024, h/768))` — trên Brick 1024×768 là 132px, y hệt Music-Player.
 
 Tắt intro (mặc định bật): `TERMINAL_NO_INTRO=1`, tạo file `intro.off` hoặc `.no-intro` cạnh `launch.sh`, đặt `"intro": false` trong `config.json`, hoặc thêm `-nointro` khi gọi binary.
 

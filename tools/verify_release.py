@@ -38,7 +38,7 @@ def main():
         # nen intro ve trong app la cach duy nhat that su hien duoc.
         with open(BIN, "rb") as h:
             blob = h.read()
-        for marker in (b"intro: NLK xong", b"intro.off", b".no-intro", b"-nointro"):
+        for marker in (b"intro: NLK giant=", b"intro: NLK xong", b"intro.off", b".no-intro", b"-nointro"):
             check(marker in blob, "binary chua intro NLK (%s)" % marker.decode("ascii"))
         check(version.encode("ascii") in blob,
               "binary duoc bien dich voi VERSION=%s" % version)

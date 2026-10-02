@@ -1,3 +1,11 @@
+## v0.3.4 - 2026-10-02
+
+- Logo NLK chuyển từ splash tĩnh sang **animation đầy đủ giống hệt Music-Player**: chữ N/L/K bay lên lần lượt, nảy overshoot, giãn chữ 4 → 30, chuyển từ đỏ sẫm sang đỏ tươi + quầng đỏ lệch +4/+6, tia sáng trắng quét N → L → K trong đoạn 0.72 → 1.00, tổng 2.2 giây, bấm phím bất kỳ bỏ qua ngay.
+- Cùng công thức font với Music-Player: `giant = 132 × max(0.75, min(w/1024, h/768))` → trên Brick 1024×768 là `giant = 132`, `k = 1.0` (hình y hệt). Nếu SDL_ttf từ chối cỡ lớn thì thử nhỏ dần và log cỡ thực dùng.
+- Pre-render 9 texture (N/L/K × sẫm/tươi/trắng) **một lần** rồi chỉ `RenderCopy` + `RenderPresent` mỗi khung; không đọc file/glyph trong vòng lặp. Hết intro thì hủy toàn bộ texture.
+- Vẽ trong hệ toạ độ màn hình thật, `fit = min(1, (w-80)/total)` nên màn hình nhỏ không bị tràn.
+- `Makefile` thêm `-lm` (hàm `sin` của overshoot + sweep).
+
 ## v0.3.3 - 2026-10-02
 
 - Logo khoi dong NLK **ve bang chinh app** (SDL_ttf) thay vi dua cho `fim`/`fbv`/`fbi`: firmware nay khong co trinh xem framebuffer nao nen cach cu khong bao gio hien du co `assets/intro.png`. Gio nền gần đen + chữ đỏ #E50914 có quầng, canh giữa, co vừa màn hình nhỏ, ~1.2s, bấm phím bất kỳ bỏ qua ngay.
