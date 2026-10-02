@@ -1,3 +1,6 @@
+## v0.2.6 - 2026-10-02
+
+- Viet hoa app: man hinh huong dan, popup luu anh, log thoat (tieng Viet khong dau vi font bitmap chi co ASCII). README/docs cap nhat theo.
 ## v0.2.5 - 2026-10-02
 
 - Sua OTA khong bao gio tu chay: parse version dung sys.argv (ban cu loi quote khien python SyntaxError, REM rong, luon "manifest khong co version"); so sanh version thuan shell (khong phu thuoc sort -V cua BusyBox); timeout fail-fast (curl/wget 5s+10s, python 10s/15s); sua vong apply pipe-while (exit trong subshell khong tac dung); launch.sh gioi han OTA 30s bang timeout va log rieng Terminal-ota.log.

@@ -87,43 +87,40 @@ void init_keyboard(int _embedded_font_name, int _use_embedded_font_for_keyboard)
 }
 
 char *help1 =
-    "How to use:\n"
-    "  DPAD/ARROWS: select key from keyboard\n"
-    "  A:          press key\n"
-    "  B:          backspace\n"
-    "  L1:         shift\n"
-    "  R1:         toggle key (for shift/ctrl...)\n"
-    "  Y:          change keyboard location\n"
-    "  X:          show / hide keyboard\n"
-    "  START:      enter\n"
-    "  SELECT:     tab\n"
-    "  L2:         left\n"
-    "  R2:         right\n"
-    "  MENU:       quit (or SELECT+START; or B twice)\n\n"
-    "Cheatcheet (tutorial at www.shellscript.sh):\n"
-    "  TAB key         complete path\n"
-    "  UP/DOWN keys    navigate history\n"
-    "  pwd             print current directory\n"
-    "  ls              list files (-l for file size)\n"
-    "  cd <d>          change directory (.. = go up)\n"
-    "  cp <f> <d>      copy files (dest can be dir)\n"
-    "  mv <f> <d>      move files (dest can be dir)\n"
-    "  rm <f>          remove files (use -rf for dir)\n\n";
+    "Huong dan su dung:\n"
+    "  DPAD: chon phim tren ban phim ao\n"
+    "  A: go phim dang chon\n"
+    "  B 2 lan: thoat app (lan 1 hien xac nhan, A de huy)\n"
+    "  L1: shift\n"
+    "  R1: giu/nha phim (shift/ctrl...)\n"
+    "  Y: doi vi tri ban phim (tren/duoi)\n"
+    "  X: an / hien ban phim\n"
+    "  START: enter\n"
+    "  SELECT: tab\n"
+    "  SELECT+START / MENU: thoat app\n"
+    "  L2 / R2: trai / phai (tat ban phim: cuon lich su)\n\n"
+    "Lenh hay dung (hoc tai www.shellscript.sh):\n"
+    "  TAB           goi y duong dan\n"
+    "  UP/DOWN       xem lai lich su lenh\n"
+    "  pwd           xem thu muc hien tai\n"
+    "  ls            liet ke file (-l xem dung luong)\n"
+    "  cd <d>        doi thu muc (.. = len tren)\n"
+    "  cp <f> <d>    chep file (dich co the la thu muc)\n"
+    "  mv <f> <d>    di chuyen file\n"
+    "  rm <f>        xoa file (-rf de xoa thu muc)\n\n";
 
 char *help2 =
-    "How to use:\n"
-    "  DPAD/ARROWS: select key from keyboard\n"
-    "  A:          press key\n"
-    "  B:          backspace\n"
-    "  L1:         shift\n"
-    "  R1:         toggle key (for shift/ctrl...)\n"
-    "  Y:          change keyboard location\n"
-    "  X:          show / hide keyboard\n"
-    "  START:      enter\n"
-    "  SELECT:     tab\n"
-    "  L2:         left\n"
-    "  R2:         right\n"
-    "  MENU:       quit (or SELECT+START; or B twice)\n\n";
+    "Huong dan su dung:\n"
+    "  DPAD: chon phim tren ban phim ao\n"
+    "  A: go phim dang chon\n"
+    "  B 2 lan: thoat app (lan 1 hien xac nhan, A de huy)\n"
+    "  L1: shift\n"
+    "  R1: giu/nha phim (shift/ctrl...)\n"
+    "  Y: doi vi tri ban phim (tren/duoi)\n"
+    "  X: an / hien ban phim\n"
+    "  START: enter\n"
+    "  SELECT: tab\n"
+    "  SELECT+START / MENU: thoat app\n\n";
 
 #define CREDIT "@haoict (c) 2025"
 
@@ -404,7 +401,7 @@ int handle_keyboard_event(SDL_Event *event) {
         int now = trimui_ticks_ms();
         if (event->key.keysym.sym == JOYBUTTON_B) {
             if (quit_confirm_until && now < quit_confirm_until) {
-                printf("Exit confirmed by B\n");
+                printf("B lan 2: thoat app\n");
                 quit_confirm_until = 0;
                 trimui_request_quit();
                 return 1;
@@ -428,7 +425,7 @@ int handle_keyboard_event(SDL_Event *event) {
         if (event->key.keysym.sym == JOYBUTTON_SELECT) quit_combo_select = held_now;
         else if (event->key.keysym.sym == JOYBUTTON_START) quit_combo_start = held_now;
         if (quit_combo_select && quit_combo_start) {
-            printf("Exit event requested by SELECT+START combo\n");
+            printf("Thoat app (SELECT+START)\n");
             SDL_Event quit_event;
             quit_event.type = SDL_QUIT;
             SDL_PushEvent(&quit_event);
@@ -444,7 +441,7 @@ int handle_keyboard_event(SDL_Event *event) {
             return 1;
         }
 #endif
-        printf("Exit event requested by Exit button\n");
+        printf("Thoat app (phim Exit)\n");
         SDL_Event quit_event;
         quit_event.type = SDL_QUIT;
         SDL_PushEvent(&quit_event);
@@ -452,7 +449,7 @@ int handle_keyboard_event(SDL_Event *event) {
     }
 
     if (event->key.type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_RETURN && selected_j == 5 && selected_i == 9) {
-        printf("Exit event requested by Enter+Exit button\n");
+        printf("Thoat app (Enter + phim Exit)\n");
         SDL_Event quit_event;
         quit_event.type = SDL_QUIT;
         SDL_PushEvent(&quit_event);
@@ -472,7 +469,7 @@ int handle_keyboard_event(SDL_Event *event) {
         if (event->key.type == SDL_KEYDOWN) {
             switch (event->key.keysym.sym) {
                 case SDLK_PRINTSCREEN:
-                    printf("Screenshot event requested\n");
+                    printf("Chup anh man hinh\n");
                     SDL_Event screenshotEvent;
                     screenshotEvent.type = SDL_USEREVENT;
                     screenshotEvent.user.code = 1;
@@ -555,7 +552,7 @@ int handle_keyboard_event(SDL_Event *event) {
             if (selected_j == 4 && (selected_i == 0 || selected_i == 11)) shifted = toggled[selected_j][selected_i];
         } else if (event->key.keysym.sym == KEY_ENTER) {
             if (selected_j == 5 && selected_i == 9) {
-                printf("Exit event requested by OSK Exit key\n");
+                printf("Thoat app (phim Exit ao)\n");
                 SDL_Event quit_event;
                 quit_event.type = SDL_QUIT;
                 SDL_PushEvent(&quit_event);

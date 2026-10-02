@@ -266,7 +266,7 @@ void trimui_hide_quit_confirm(void) {
 void sdl_shutdown(void) {
     if (SDL_WasInit(SDL_INIT_EVERYTHING) != 0 && !shutdown_called) {
         shutdown_called = 1;
-        fprintf(stderr, "SDL shutting down\n");
+        fprintf(stderr, "Dang thoat Terminal\n");
         /* Chan SIGCHLD handler tu dong exit (se deadlock voi WaitThread). */
         signal(SIGCHLD, SIG_DFL);
         thread_should_exit = 1;
@@ -282,7 +282,7 @@ void sdl_shutdown(void) {
             if (tty_thread_done) {
                 SDL_WaitThread(thread, NULL);
             } else {
-                fprintf(stderr, "tty thread stuck after 2s, skip join (exit se thu hoi)\n");
+                fprintf(stderr, "Luong tty ket sau 2s, bo qua cho (thoat se thu hoi)\n");
             }
             thread = NULL;
         }
@@ -1052,9 +1052,9 @@ void take_screenshot() {
 
     if (main_window.surface) {
         if (SDL_SaveBMP(main_window.surface, filename) == 0) {
-            sprintf(popup_message, "Screenshot saved to %s", filename);
+            sprintf(popup_message, "Da luu anh: %s", filename);
         } else {
-            sprintf(popup_message, "Failed to save screenshot: %s", SDL_GetError());
+            sprintf(popup_message, "Loi luu anh: %s", SDL_GetError());
         }
     }
 

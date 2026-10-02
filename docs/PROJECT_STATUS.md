@@ -1,7 +1,7 @@
-# trimui-terminal - trang thai du an (v0.2.3, 2026-10-01)
+# trimui-terminal - trang thai du an (v0.2.6, 2026-10-02)
 
 Repo doc lap: `Project APPS/Trimui-Terminal` (khong nam trong `chiaki-ng`).
-GitHub: `nlkcodenew/trimui-terminal`, branch `main`. Release moi nhat: `v0.2.3`.
+GitHub: `nlkcodenew/trimui-terminal`, branch `main`. Release moi nhat: `v0.2.6`.
 
 ## 1. Muc tieu goc
 
@@ -14,8 +14,8 @@ GitHub: `nlkcodenew/trimui-terminal`, branch `main`. Release moi nhat: `v0.2.3`.
 Snapshot goc giu tai `native/upstream-2.1.0/`, khong sua. Mọi patch nam truc tiep trong `native/src/`:
 
 - `keyboard.h`: profile `TRIMUI_BRICK` (A=1 B=0 X=3 Y=2 L1=4 R1=5 L2=6 R2=7 SELECT=8 START=9 MENU=10 L3=11 R3=12 UP=13 DOWN=14 LEFT=15 RIGHT=16); prototype quit helpers.
-- `keyboard.c`: B 2 lan thoat / A huy (4s) + combo SELECT+START + phim Exit tren OSK; DPAD nav bang ty le cot; OSK scale co dinh 3/4, khong fit-width dong.
-- `main.c`: HAT cho TRIMUI_BRICK; tach font terminal (TTF 16) va OSK (TTF 26 rieng); quit helpers + popup "B lan nua de thoat | A de huy".
+- `keyboard.c`: B 2 lan thoat / A huy (4s) + combo SELECT+START + phim Exit tren OSK; DPAD nav bang ty le cot; huong dan + log tieng Viet (khong dau, font bitmap chi co ASCII).
+- `main.c`: HAT cho TRIMUI_BRICK; tach font terminal (TTF 16) va OSK (pick co to nhat vua 1280); quit helpers + popup "B lan nua de thoat | A de huy"; shutdown cho thread toi da 2s.
 - `font.h/.c`: them font TTF thu 2 (`init_osk_ttf_font`, `draw_string_osk_ttf`) chi cho ban phim ao.
 - `config.h`: shell `/bin/sh`, scale 1.0, fontsize terminal 16.
 - `vt100.c`: HOME fallback + shell fallback.
@@ -28,6 +28,9 @@ Snapshot goc giu tai `native/upstream-2.1.0/`, khong sua. Mọi patch nam truc t
 - v0.2.1: UI gon (term 16 + OSK 26), thoat B 2 lan / A huy. (Ban nay tung loi nhan doi main.c -> da dung lai source sach.)
 - v0.2.2: sua DPAD nhay loan (bo double-handle KEYDOWN + held-repeat, nav ty le cot, OSK scale co dinh).
 - v0.2.3: OTA tu dong hoan toan (mo app la cai, khong hoi), timeout fail-fast curl/wget.
+- v0.2.4: OSK pick co to nhat vua man hinh; B lan 2 kill shell + select timeout (van sot deadlock).
+- v0.2.5: sua OTA that (loi quote parse version + so sanh POSIX + apply subshell), sua treo B that (sigchld/tty_read/shutdown 2s), OSK that (load font sau khi biet 1280 + fallback + uu tien OSK TTF); sua build-tg5050.sh thieu dau `-`.
+- v0.2.6: Viet hoa app (help/log/popup, khong dau) + README/docs.
 
 ## 4. Quy trinh build + release (da chot, dung lai moi lan)
 
@@ -52,6 +55,6 @@ Lenh build chuan (WSL): toolchain `aarch64-none-linux-gnu-`, sysroot SDK TG5050,
 
 ## 6. Viec tiep theo (cho session moi)
 
-1. Cho user test v0.2.3 tren may that: UI gon chua, B 2 lan thoat chua, DPAD het nhay chua, OTA tu dong co len ban moi khong.
+1. Cho user test OTA tu v0.2.5 len v0.2.6 tren may that (mo app la tu len, xem `Terminal-ota.log`).
 2. Lay log `Bt-survey-*.log` de danh gia BLE HID (muc dich goc cua app).
 3. Neu on: chuyen sang prototype tay cam (BLE HID GATT 0x1812) hoac USB HID gadget.

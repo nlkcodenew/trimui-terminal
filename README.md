@@ -9,7 +9,7 @@ Muc dich chinh: co terminal chay duoc tren Brick Pro de chay `bt-survey`, phuc v
 1. Vao [Releases](../../releases/latest), tai `trimui-terminal-vX.Y.Z.zip` (khong tai Source code).
 2. Giai nen vao goc the nho de co `Apps/TrimuiTerminal/launch.sh`.
 3. Lap the vao may, mo **Trimui Terminal**.
-4. Tu v0.2.3: mo app la tu check + tu tai + tu cai ban moi, khong can copy tay nua.
+4. Tu v0.2.5: mo app la tu check + tu tai + tu cai ban moi, khong can copy tay nua.
 
 Chi tiet tung buoc: [CAI_DAT.md](CAI_DAT.md).
 
@@ -31,11 +31,11 @@ Chi tiet tung buoc: [CAI_DAT.md](CAI_DAT.md).
 | MENU | Thoat app (neu OS khong nuot) |
 | L2 / R2 | Cuon lich su len/xuong (khi tat ban phim) |
 
-Tham so khi chay: `-scale 1.0`, `-font 1..5 | /path/font.ttf`, `-fontsize N` (terminal), `-rotate 0|90|180|270`, `-r "lenh..."`, `-q`. Ban phim ao luon dung font to rieng size 26.
+Tham so khi chay: `-scale 1.0`, `-font 1..5 | /path/font.ttf`, `-fontsize N` (terminal), `-rotate 0|90|180|270`, `-r "lenh..."`, `-q`. Ban phim ao tu chon co chu to nhat vua full be ngang 1280.
 
 ## OTA tu dong
 
-- Mo app la tu check + tai + cai (v0.2.3+), log vao `Terminal-ota.log`. Offline thi bo qua, khong chan mo app.
+- Mo app la tu check + tai + cai (v0.2.5+ da sua loi OTA, chay that), log vao `Terminal-ota.log`. Offline thi bo qua, khong chan mo app. OTA bi gioi han 30s moi lan mo.
 - Chay tay trong terminal: `sh ota-update.sh` (ban cu hoi y/N), `sh ota-update.sh --apply`, `sh ota-update.sh --check`.
 - Tat tu dong: mo app voi `TERMINAL_NO_OTA=1`.
 
@@ -88,7 +88,7 @@ Uu tien SDK TG5050 (`../sdk-tg5050/sdk_tg5050_linux_v1.0.0`) neu co; fallback sa
 
 ## Trang thai du an
 
-Xem [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md). Ban hien tai: `v0.2.3` (xem [CHANGELOG.md](CHANGELOG.md)).
+Xem [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md). Ban hien tai: `v0.2.6` (xem [CHANGELOG.md](CHANGELOG.md)).
 
 ## Giay phep
 
