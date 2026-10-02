@@ -18,7 +18,7 @@ TZ = timezone(timedelta(hours=7))
 APP_DIR_IN_ZIP = "Apps/TrimuiTerminal"
 EXCLUDE_NAMES = {"__pycache__", ".update_staging"}
 EXCLUDE_FILES = {"desktop.ini", ".DS_Store"}
-RUNTIME_PREFIXES = ("Terminal-loi.txt", "Bt-survey-", "Chiaki-")
+RUNTIME_PREFIXES = ("Terminal-loi.txt", "Terminal-ota.log", "Bt-survey-", "Chiaki-")
 LF_EXTS = {".json", ".md", ".py", ".sh", ".txt", ".cmake", ".yml", ".yaml", ".c", ".h"}
 
 def app_version():

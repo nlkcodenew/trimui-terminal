@@ -1,3 +1,9 @@
+## v0.2.7 - 2026-10-02
+
+- Sua terminal den thui (chi thay ban phim): ban va 0.2.4 doi select() sang timeout 200ms nhung continue luon, bo qua SDL_PushEvent ve lai -> terminal khong bao gio repaint. Khoi phuc ve lai sau moi burst output + co tty_data_pending + ve khung ngay khi mo app.
+- Sua OTA khong can python3: them duong tai shell thuan (curl/wget + sha256sum, parse manifest bang awk) khi may khong co python3 (Stock OS chi co header python, khong co trinh thong dich). Them thu lai manifest 2 lan cho WiFi len cham.
+- Panel xac nhan thoat to giua man hinh (vien vang nen den, font OSK to, 2 dong), thay popup bitmap be ti.
+- Phat hien tu log may that: man hinh Brick la 1024x768 (khong phai 1280), OSK pick size 24 la dung.
 ## v0.2.6 - 2026-10-02
 
 - Viet hoa app: man hinh huong dan, popup luu anh, log thoat (tieng Viet khong dau vi font bitmap chi co ASCII). README/docs cap nhat theo.

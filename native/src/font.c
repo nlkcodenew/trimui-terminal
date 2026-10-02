@@ -735,7 +735,7 @@ int init_osk_ttf_font(const char *font_path, int font_size, int shade) {
 int is_osk_ttf_loaded(void) { return osk_ttf_font != NULL; }
 /* Chon co TTF lon nhat ma van vua be ngang (46*cw) va 6 hang vua 55% man hinh.
    Neu khong co nao vua (font ti le rong), fallback size 16 de OSK khong
-   roi ve bitmap ti hon giua man hinh 1280. */
+   roi ve bitmap ti hon giua man hinh. */
 int pick_osk_ttf_font(const char *font_path, int max_w, int max_h) {
     static const int sizes[] = {48, 44, 40, 36, 32, 30, 28, 26, 24, 22, 20, 18, 16, 0};
     if (TTF_Init() == -1) return 0;

@@ -31,7 +31,7 @@ Chi tiet tung buoc: [CAI_DAT.md](CAI_DAT.md).
 | MENU | Thoat app (neu OS khong nuot) |
 | L2 / R2 | Cuon lich su len/xuong (khi tat ban phim) |
 
-Tham so khi chay: `-scale 1.0`, `-font 1..5 | /path/font.ttf`, `-fontsize N` (terminal), `-rotate 0|90|180|270`, `-r "lenh..."`, `-q`. Ban phim ao tu chon co chu to nhat vua full be ngang 1280.
+Tham so khi chay: `-scale 1.0`, `-font 1..5 | /path/font.ttf`, `-fontsize N` (terminal), `-rotate 0|90|180|270`, `-r "lenh..."`, `-q`. Ban phim ao tu chon co chu to nhat vua full be ngang man hinh (Brick 1024).
 
 ## OTA tu dong
 

@@ -206,7 +206,7 @@ void draw_keyboard(SDL_Surface *surface) {
             y += embedded_font_name == 3 ? embedded_font_char_height + 2 : embedded_font_char_height;
         }
     } else if (is_osk_ttf_loaded()) {
-        /* OSK vua khit Brick Pro: hang dai nhat (17 phim) vua 1280, 6 hang vua ~55% chieu cao.
+        /* OSK vua khit Brick Pro: hang dai nhat vua be ngang that, 6 hang vua ~55% chieu cao.
            Dung cw/ch thuc te tu pick_osk_ttf_font, khong scale them. */
         int cw = get_osk_ttf_char_width();
         int ch = get_osk_ttf_char_height();

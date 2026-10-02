@@ -156,6 +156,7 @@ char *opt_io = NULL;
 static int embedded_font_name = 1;  // 1 or 2
 static volatile int thread_should_exit = 0;
 static volatile int tty_thread_done = 0;
+static volatile int tty_data_pending = 0; /* tty co output moi -> main ve lai */
 static int shutdown_called = 0;
 extern volatile int trimui_thread_should_exit;
 extern volatile int trimui_child_exited;
@@ -257,7 +258,7 @@ void trimui_request_quit(void) {
     SDL_PushEvent(&q);
 }
 void trimui_show_quit_confirm(void) {
-    snprintf(popup_message, sizeof(popup_message), "B lan nua de thoat | A de huy");
+    snprintf(popup_message, sizeof(popup_message), "B LAN NUA DE THOAT|A DE HUY");
     SDL_AddTimer(4000, clear_popup_timer, NULL);
 }
 void trimui_hide_quit_confirm(void) {
@@ -436,17 +437,77 @@ void create_tty_thread() {
     }
 }
 
+/* Panel thong bao to, can giua man hinh (vd xac nhan thoat).
+   popup_message co the chua '|' de tach 2 dong. Dung font OSK to neu co. */
+static void draw_popup_box(SDL_Surface *s) {
+    char l1[200], l2[200];
+    const char *sep = strchr(popup_message, '|');
+    if (sep) {
+        size_t n1 = (size_t)(sep - popup_message);
+        if (n1 >= sizeof(l1)) n1 = sizeof(l1) - 1;
+        memcpy(l1, popup_message, n1);
+        l1[n1] = '\0';
+        snprintf(l2, sizeof(l2), "%s", sep + 1);
+    } else {
+        snprintf(l1, sizeof(l1), "%s", popup_message);
+        l2[0] = '\0';
+    }
+    int use_osk = is_osk_ttf_loaded();
+    int cw, ch;
+    if (use_osk) {
+        cw = get_osk_ttf_char_width();
+        ch = get_osk_ttf_char_height();
+    } else if (is_ttf_loaded()) {
+        cw = get_ttf_char_width();
+        ch = get_ttf_char_height();
+    } else {
+        cw = get_embedded_font_char_width(embedded_font_name);
+        ch = get_embedded_font_char_height(embedded_font_name);
+    }
+    if (cw <= 0) cw = 6;
+    if (ch <= 0) ch = 8;
+    int nlines = l2[0] ? 2 : 1;
+    int maxlen = (int)strlen(l1);
+    if (l2[0] && (int)strlen(l2) > maxlen) maxlen = (int)strlen(l2);
+    int w = maxlen * cw + 48;
+    if (w > s->w - 16) w = s->w - 16;
+    if (w < 200) w = 200;
+    int h = nlines * ch + 36;
+    int x = (s->w - w) / 2;
+    if (x < 8) x = 8;
+    int y = s->h * 28 / 100;
+    if (y + h > s->h) y = s->h - h - 8;
+    if (y < 8) y = 8;
+    /* vien vang + nen den cho noi bat */
+    SDL_Rect outer = {x, y, w, h};
+    SDL_Rect inner = {x + 3, y + 3, w - 6, h - 6};
+    SDL_FillRect(s, &outer, SDL_MapRGB(s->format, 255, 255, 128));
+    SDL_FillRect(s, &inner, SDL_MapRGB(s->format, 0, 0, 0));
+    SDL_Color fg = {255, 255, 128, 255};
+    SDL_Color bg = {0, 0, 0, 255};
+    Uint16 fg16 = SDL_MapRGB(s->format, fg.r, fg.g, fg.b);
+    for (int li = 0; li < nlines; li++) {
+        const char *txt = (li == 0) ? l1 : l2;
+        int tw = (int)strlen(txt) * cw;
+        int tx = x + (w - tw) / 2;
+        if (tx < x + 8) tx = x + 8;
+        int ty = y + 18 + li * ch;
+        if (use_osk)
+            draw_string_osk_ttf(s, txt, tx, ty, fg, bg);
+        else if (is_ttf_loaded())
+            draw_string_ttf(s, txt, tx, ty, fg, bg);
+        else
+            draw_string(s, txt, tx, ty, fg16, embedded_font_name);
+    }
+}
+
 void update_render(void) {
     if (main_window.surface == NULL) return;
     // printf("Updating render\n");
 
     memcpy(osk_screen->pixels, main_window.surface->pixels, main_window.surface->w * main_window.surface->h * 2);
     if (popup_message[0] != '\0') {
-        SDL_Rect rect = {borderpx, main_window.height / 2 - main_window.char_height / 2 - 4, main_window.width - borderpx * 2, main_window.char_height + 6};
-        SDL_Color popup_box_bg = drawing_ctx.colors[8];
-        SDL_Color popup_box_str = drawing_ctx.colors[11];
-        SDL_FillRect(osk_screen, &rect, SDL_MapRGB(osk_screen->format, popup_box_bg.r, popup_box_bg.g, popup_box_bg.b));
-        draw_string(osk_screen, popup_message, rect.x + 2, rect.y + 4, SDL_MapRGB(osk_screen->format, popup_box_str.r, popup_box_str.g, popup_box_str.b), embedded_font_name);
+        draw_popup_box(osk_screen);
     }
     draw_keyboard(osk_screen);  // osk_screen(SW) = console + keyboard
     // Update texture with screen pixels and render
@@ -977,6 +1038,7 @@ void text_input(SDL_Event *ev) {
 
 int tty_thread(void *unused) {
     int i;
+    int got_data = 0; /* co output moi tu shell ke tu lan ve cuoi */
     fd_set rfd;
     struct timeval drawtimeout, *tv = NULL;
     SDL_Event event;
@@ -999,9 +1061,17 @@ int tty_thread(void *unused) {
                 if (errno == EINTR) continue;
                 break;
             }
+            /* Het burst output (timeout) ma co du lieu moi -> bao main ve lai
+               terminal (co che goc cua upstream). Neu continue luon o day thi
+               man hinh terminal khong bao gio duoc ve lai (den thui). */
             if (sr == 0) {
                 tv = NULL;
                 i = 0;
+                if (got_data) {
+                    got_data = 0;
+                    tty_data_pending = 1;
+                    SDL_PushEvent(&event);
+                }
                 continue;
             }
         }
@@ -1011,7 +1081,13 @@ int tty_thread(void *unused) {
          * feel like the system is stuttering.
          */
         if (i < 1000 && FD_ISSET(cmdfd, &rfd)) {
-            if (tty_read() < 0) break; /* EOF/pty chet -> thoat, khong die */
+            if (tty_read() < 0) { /* EOF/pty chet -> ve not cuoi roi thoat */
+                tty_data_pending = 1;
+                SDL_PushEvent(&event);
+                break;
+            }
+            tty_data_pending = 1;
+            got_data = 1;
 
             /*
              * Just wait a bit so it isn't disturbing the
@@ -1204,6 +1280,14 @@ void main_loop(void) {
             should_rerender = 1;
         }
 
+        /* Shell co output moi (bao tu tty thread) -> ve lai terminal ngay,
+           ke ca khi event USEREVENT bi rot khoi hang doi. */
+        if (tty_data_pending) {
+            tty_data_pending = 0;
+            draw(); /* ve terminal + present */
+            should_rerender = 0;
+        }
+
         if (should_rerender) {
             update_render();  // redraw the screen
             should_rerender = 0;
@@ -1355,6 +1439,7 @@ int main(int argc, char *argv[]) {
     create_tty_thread();
     scale_to_size((int)(main_window.width / opt_scale), (int)(main_window.height / opt_scale));
     init_keyboard(embedded_font_name, opt_use_embedded_font_for_keyboard);
+    draw(); /* ve khung terminal + ban phim ngay, khong doi event dau */
     main_loop();
     return 0;
 }

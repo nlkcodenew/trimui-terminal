@@ -67,6 +67,35 @@ PYEOF
   fi
   return 1
 }
+# Tai + verify sha256 bang shell thuan (khi may khong co python3).
+# Doc manifest.json bang awk (manifest do make_release.py sinh, format on dinh).
+shell_download_files() {
+  LIST="$TMPD.files.list"
+  awk '
+    /"path"/ { p=$0; sub(/.*"path"[[:space:]]*:[[:space:]]*"/, "", p); sub(/".*/, "", p) }
+    /"sha256"/ { s=$0; sub(/.*"sha256"[[:space:]]*:[[:space:]]*"/, "", s); sub(/".*/, "", s); if (p != "" && s != "") print p "|" s; p=""; s="" }
+  ' "$MANIFEST_JSON" > "$LIST" 2>/dev/null
+  [ -s "$LIST" ] || { say "khong doc duoc danh sach file"; return 1; }
+  command -v sha256sum >/dev/null 2>&1 || { say "thieu sha256sum de verify"; return 1; }
+  while IFS= read -r e; do
+    rel="${e%%|*}"; want="${e##*|}"
+    [ -n "$rel" ] && [ -n "$want" ] || return 1
+    got=""
+    for b in $BASES; do
+      if fetch "$b/$rel" "$TMPD.dl.tmp"; then got="$TMPD.dl.tmp"; break; fi
+    done
+    [ -n "$got" ] || { say "khong tai duoc: $rel"; return 1; }
+    have="$(sha256sum "$got" 2>/dev/null | cut -d' ' -f1)"
+    if [ "$have" != "$want" ]; then say "sai hash: $rel"; rm -f "$got"; return 1; fi
+    dst="$TMPD/$rel"
+    mkdir -p "$(dirname "$dst")" 2>/dev/null
+    mv "$got" "$dst" || return 1
+    say "ok $rel"
+  done < "$LIST"
+  n="$(wc -l < "$LIST" 2>/dev/null | tr -d ' ')"
+  say "STAGED $n file(s)"
+  return 0
+}
 MANIFEST_JSON="$TMPD.manifest.json"
 rm -rf "$TMPD" "$MANIFEST_JSON"
 mkdir -p "$TMPD" 2>/dev/null || { say "khong tao duoc staging"; exit 1; }
@@ -76,7 +105,14 @@ else
   MURL="https://raw.githubusercontent.com/$REPO/$CHANNEL/manifest.json"
 fi
 say "local=$CUR repo=$REPO channel=$CHANNEL"
-fetch "$MURL" "$MANIFEST_JSON" || fetch "https://cdn.jsdelivr.net/gh/$REPO@main/manifest.json" "$MANIFEST_JSON" || { say "khong tai duoc manifest"; exit 1; }
+got_manifest=0
+for try in 1 2; do
+  if fetch "$MURL" "$MANIFEST_JSON" || fetch "https://cdn.jsdelivr.net/gh/$REPO@main/manifest.json" "$MANIFEST_JSON"; then
+    got_manifest=1; break
+  fi
+  [ "$try" = "1" ] && sleep 3
+done
+[ "$got_manifest" = "1" ] || { say "khong tai duoc manifest"; exit 1; }
 # Parse version (dung sys.argv, khong loi quote). Fallback grep neu thieu python3.
 REM=""
 if command -v python3 >/dev/null 2>&1; then
@@ -102,7 +138,9 @@ if [ "${1:-}" != "--apply" ]; then
   case "$ans" in y|Y|yes|YES) ;; *) say "huy bo"; rm -rf "$TMPD" "$MANIFEST_JSON"; exit 3;; esac
 fi
 say "tai $REM ..."
-python3 - "$MANIFEST_JSON" "$TMPD" "$BASES" "$CA" <<PYEOF || { say "tai file that bai"; rm -rf "$TMPD" "$MANIFEST_JSON"; exit 1; }
+DL_OK=0
+if command -v python3 >/dev/null 2>&1; then
+python3 - "$MANIFEST_JSON" "$TMPD" "$BASES" "$CA" <<PYEOF && DL_OK=1
 import hashlib, os, ssl, sys, json, urllib.request
 mp, tmpd, bases, ca = sys.argv[1], sys.argv[2], sys.argv[3].split(), sys.argv[4]
 man = json.load(open(mp, encoding="utf-8"))
@@ -141,6 +179,12 @@ if fails:
     print("FAILED %d file(s)" % len(fails)); sys.exit(1)
 print("STAGED %d file(s)" % len(files))
 PYEOF
+fi
+if [ "$DL_OK" != "1" ]; then
+  say "thu tai bang shell (may khong co python3)..."
+  if shell_download_files; then DL_OK=1; fi
+fi
+if [ "$DL_OK" != "1" ]; then say "tai file that bai"; rm -rf "$TMPD" "$MANIFEST_JSON"; exit 1; fi
 # Apply: khong dung pipe-while (exit trong subshell khong lan ra ngoai).
 LIST="$TMPD.apply.list"
 (cd "$TMPD" && find . -type f -print > "$LIST") || { say "apply that bai"; rm -rf "$TMPD" "$MANIFEST_JSON"; exit 1; }
