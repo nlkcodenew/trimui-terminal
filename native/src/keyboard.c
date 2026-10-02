@@ -156,6 +156,15 @@ void draw_keyboard(SDL_Surface *surface) {
                     draw_string_ttf(help_cache, banner_str, 2, 10, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
                     draw_string_ttf(help_cache, "Bấm phím bất kỳ để bắt đầu", 2, 34, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
                     draw_string_ttf_with_linebreak(help_cache, embedded_font_name == 2 ? help2 : help1, 8, 60, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
+#ifdef VERSION
+                    {
+                        char credit_str[128];
+                        snprintf(credit_str, sizeof(credit_str), "Version %s - %s", VERSION, CREDIT);
+                        draw_string_ttf(help_cache, credit_str, 2, help_cache->h - 30, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
+                    }
+#else
+                    draw_string_ttf(help_cache, CREDIT, 2, help_cache->h - 30, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
+#endif
                 }
             }
             if (help_cache) SDL_BlitSurface(help_cache, NULL, surface, NULL);
@@ -165,24 +174,23 @@ void draw_keyboard(SDL_Surface *surface) {
             draw_string(surface, embedded_font_name == 2 ? help2 : help1, 8, 30, sel_color, embedded_font_name);
         }
 #ifdef VERSION
-        char credit_str[128];
-        snprintf(credit_str, sizeof(credit_str), "Version %s - %s", VERSION, CREDIT);
-        if (is_ttf_loaded()) {
-            // Use TTF rendering
-            draw_string_ttf(surface, credit_str, 2, 400, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
-        } else if (embedded_font_name == 4 || embedded_font_name == 5) {
-            draw_string(surface, credit_str, 2, 290, sel_toggled_color, embedded_font_name);
-        } else {
-            draw_string(surface, credit_str, 2, 220, sel_toggled_color, embedded_font_name);
+        /* TTF: credit da ve san trong help_cache (duoi day). Bitmap: ve duoi day. */
+        if (!is_ttf_loaded()) {
+            char credit_str[128];
+            snprintf(credit_str, sizeof(credit_str), "Version %s - %s", VERSION, CREDIT);
+            if (embedded_font_name == 4 || embedded_font_name == 5) {
+                draw_string(surface, credit_str, 2, surface->h - 16, sel_toggled_color, embedded_font_name);
+            } else {
+                draw_string(surface, credit_str, 2, surface->h - 12, sel_toggled_color, embedded_font_name);
+            }
         }
 #else
-        if (is_ttf_loaded()) {
-            // Use TTF rendering
-            draw_string_ttf(surface, CREDIT, 2, 220, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
-        } else if (embedded_font_name == 4 || embedded_font_name == 5) {
-            draw_string(surface, CREDIT, 2, 290, sel_toggled_color, embedded_font_name);
-        } else {
-            draw_string(surface, CREDIT, 2, 220, sel_toggled_color, embedded_font_name);
+        if (!is_ttf_loaded()) {
+            if (embedded_font_name == 4 || embedded_font_name == 5) {
+                draw_string(surface, CREDIT, 2, surface->h - 16, sel_toggled_color, embedded_font_name);
+            } else {
+                draw_string(surface, CREDIT, 2, surface->h - 12, sel_toggled_color, embedded_font_name);
+            }
         }
 #endif
         return;

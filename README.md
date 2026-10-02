@@ -88,7 +88,7 @@ python3 tools/make_release.py
 
 ## Trạng thái dự án
 
-Xem [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md). Bản hiện tại: `v0.2.8` (xem [CHANGELOG.md](CHANGELOG.md)).
+Xem [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md). Bản hiện tại: `v0.3.0` (xem [CHANGELOG.md](CHANGELOG.md)).
 
 ## Giấy phép
 

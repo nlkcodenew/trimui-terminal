@@ -794,9 +794,9 @@ SDL_Surface *render_term_ttf_text(const char *text, SDL_Color fg, SDL_Color bg) 
 void draw_string_osk_ttf(SDL_Surface *surface, const char *text, int x, int y, SDL_Color fg, SDL_Color bg) {
     if (!osk_ttf_font || !surface || !text || !*text) return;
     SDL_Surface *ts = NULL;
-    if (osk_ttf_font_shade == 2) ts = TTF_RenderText_Shaded(osk_ttf_font, text, fg, bg);
-    else if (osk_ttf_font_shade == 1) ts = TTF_RenderText_Blended(osk_ttf_font, text, fg);
-    else ts = TTF_RenderText_Solid(osk_ttf_font, text, fg);
+    if (osk_ttf_font_shade == 2) ts = TTF_RenderUTF8_Shaded(osk_ttf_font, text, fg, bg);
+    else if (osk_ttf_font_shade == 1) ts = TTF_RenderUTF8_Blended(osk_ttf_font, text, fg);
+    else ts = TTF_RenderUTF8_Solid(osk_ttf_font, text, fg);
     if (!ts) return;
     SDL_Rect dest = {x, y, ts->w, ts->h};
     SDL_BlitSurface(ts, NULL, surface, &dest);
@@ -818,15 +818,15 @@ void draw_string_ttf(SDL_Surface *surface, const char *text, int x, int y, SDL_C
 
     SDL_Surface *text_surface;
     if (ttf_font_shade == 2) {  // highest quality
-        text_surface = TTF_RenderText_Shaded(ttf_font, text, fg, bg);
+        text_surface = TTF_RenderUTF8_Shaded(ttf_font, text, fg, bg);
     } else if (ttf_font_shade == 1) {  // medium quality
-        text_surface = TTF_RenderText_Blended(ttf_font, text, fg);
+        text_surface = TTF_RenderUTF8_Blended(ttf_font, text, fg);
     } else {
-        text_surface = TTF_RenderText_Solid(ttf_font, text, fg);
+        text_surface = TTF_RenderUTF8_Solid(ttf_font, text, fg);
     }
 
     if (!text_surface) {
-        fprintf(stderr, "TTF_RenderText_Shaded %s failed: %s\n", text, TTF_GetError());
+        fprintf(stderr, "TTF_RenderUTF8 %s failed: %s\n", text, TTF_GetError());
         return;
     }
 

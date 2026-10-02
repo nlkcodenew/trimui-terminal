@@ -1,3 +1,8 @@
+## v0.3.0 - 2026-10-02
+
+- Sửa vỡ font tiếng Việt: `TTF_RenderText_*` trên SDL_ttf của máy hiểu chuỗi theo Latin-1 (chữ UTF-8 thành `Báº¥m...`); chuyển toàn bộ sang `TTF_RenderUTF8_*`.
+- Nhãn version thường trực `v0.3.0` góc trên-phải vùng terminal khi gõ lệnh.
+- Sửa dòng credit đè lên nội dung trợ giúp: chuyển xuống đáy màn hình (TTF) / cuối màn hình (bitmap).
 ## v0.2.9 - 2026-10-02
 
 - Thông báo cập nhật: OTA chạy nền (app mở ngay), hiện badge "Đang tải..." góc phải trong lúc tải, popup lớn "ĐÃ CẬP NHẬT LÊN vX - MỞ LẠI APP ĐỂ DÙNG" khi xong (đọc file .ota-status do ota-update.sh ghi).

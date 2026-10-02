@@ -163,6 +163,7 @@ static SDL_Surface *ota_badge = NULL;
 static char ota_badge_text[64] = "";
 static Uint32 ota_last_poll = 0;
 static int ota_done_shown = 0;
+static SDL_Surface *ver_label = NULL; /* nhan version nho goc phai man hinh terminal */
 static void trimui_free_popup_cache(void);
 static void trimui_free_ota_badge(void);
 extern volatile int trimui_thread_should_exit;
@@ -305,6 +306,8 @@ void sdl_shutdown(void) {
         if (rotated_screen) SDL_FreeSurface(rotated_screen);
         if (ota_badge) SDL_FreeSurface(ota_badge);
         ota_badge = NULL;
+        if (ver_label) SDL_FreeSurface(ver_label);
+        ver_label = NULL;
         trimui_free_popup_cache();
         main_window.surface = NULL;
         SDL_JoystickClose(joystick);
@@ -597,8 +600,23 @@ void update_render(void) {
         draw_popup_box(osk_screen);
     }
     draw_keyboard(osk_screen);  // osk_screen(SW) = console + keyboard
-    if (ota_badge) { /* badge OTA goc tren-phai */
-        SDL_Rect bd = {osk_screen->w - ota_badge->w - 8, 8, ota_badge->w, ota_badge->h};
+#ifdef VERSION
+    /* Nhan version thuong truc goc tren-phai vung terminal. */
+    if (!ver_label && is_ttf_loaded()) {
+        char vt[32];
+        snprintf(vt, sizeof(vt), "v%s", VERSION);
+        ver_label = render_term_ttf_text(vt, (SDL_Color){150, 150, 150, 255}, (SDL_Color){0, 0, 0, 255});
+    }
+#endif
+    if (ver_label) {
+        SDL_Rect vd = {osk_screen->w - ver_label->w - 6, 4, ver_label->w, ver_label->h};
+        SDL_Rect vbg = {vd.x - 2, vd.y - 1, vd.w + 4, vd.h + 2};
+        SDL_FillRect(osk_screen, &vbg, SDL_MapRGB(osk_screen->format, 0, 0, 0));
+        SDL_BlitSurface(ver_label, NULL, osk_screen, &vd);
+    }
+    if (ota_badge) { /* badge OTA ngay duoi nhan version */
+        int by = ver_label ? 4 + ver_label->h + 4 : 8;
+        SDL_Rect bd = {osk_screen->w - ota_badge->w - 8, by, ota_badge->w, ota_badge->h};
         SDL_Rect bgrect = {bd.x - 4, bd.y - 3, bd.w + 8, bd.h + 6};
         SDL_FillRect(osk_screen, &bgrect, SDL_MapRGB(osk_screen->format, 0, 0, 0));
         SDL_BlitSurface(ota_badge, NULL, osk_screen, &bd);
