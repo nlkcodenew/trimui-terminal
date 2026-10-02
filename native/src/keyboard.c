@@ -133,23 +133,34 @@ void draw_keyboard(SDL_Surface *surface) {
     unsigned short sel_color = SDL_MapRGB(surface->format, 128, 255, 128);
     unsigned short sel_toggled_color = SDL_MapRGB(surface->format, 255, 255, 128);
     unsigned short toggled_color = SDL_MapRGB(surface->format, 192, 192, 0);
-    if (is_ttf_loaded()) {
-        show_help = 0;  // disable when TTF is available to avoid text overlap
-    }
-    if (show_help) {
-        SDL_FillRect(surface, NULL, text_color);
+    /* Banner huong dan hien moi lan mo app cho den khi bam phim (tat bang KEYUP).
+       KHONG tu tat khi co TTF (truoc day tu tat nen user khong bao gio thay banner/version). */
+    /* Cache banner: render 1 lan (chu Viet on dinh + nhe CPU), ve lai khi doi kich thuoc. */
+    static SDL_Surface *help_cache = NULL;
+    static int help_cache_w = 0, help_cache_h = 0;
 #ifdef VERSION
-        char banner_str[64];
-        snprintf(banner_str, sizeof(banner_str), "Trimui Terminal v%s", VERSION);
+    char banner_str[64];
+    snprintf(banner_str, sizeof(banner_str), "Trimui Terminal v%s", VERSION);
 #else
-        const char *banner_str = "Trimui Terminal";
+    const char *banner_str = "Trimui Terminal";
 #endif
+    if (show_help) {
         if (is_ttf_loaded()) {
-            // Use TTF rendering
-            draw_string_ttf(surface, banner_str, 2, 10, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
-            draw_string_ttf(surface, "Bấm phím bất kỳ để bắt đầu", 2, 32, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
-            draw_string_ttf_with_linebreak(surface, embedded_font_name == 2 ? help2 : help1, 8, 56, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
+            if (!help_cache || help_cache_w != surface->w || help_cache_h != surface->h) {
+                if (help_cache) SDL_FreeSurface(help_cache);
+                help_cache = SDL_CreateRGBSurface(0, surface->w, surface->h, surface->format->BitsPerPixel, surface->format->Rmask, surface->format->Gmask, surface->format->Bmask, surface->format->Amask);
+                help_cache_w = surface->w;
+                help_cache_h = surface->h;
+                if (help_cache) {
+                    SDL_FillRect(help_cache, NULL, SDL_MapRGB(help_cache->format, 0, 0, 0));
+                    draw_string_ttf(help_cache, banner_str, 2, 10, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
+                    draw_string_ttf(help_cache, "Bấm phím bất kỳ để bắt đầu", 2, 34, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
+                    draw_string_ttf_with_linebreak(help_cache, embedded_font_name == 2 ? help2 : help1, 8, 60, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
+                }
+            }
+            if (help_cache) SDL_BlitSurface(help_cache, NULL, surface, NULL);
         } else {
+            SDL_FillRect(surface, NULL, text_color);
             draw_string(surface, banner_str, 2, 10, sel_toggled_color, embedded_font_name);
             draw_string(surface, embedded_font_name == 2 ? help2 : help1, 8, 30, sel_color, embedded_font_name);
         }

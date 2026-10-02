@@ -1,7 +1,7 @@
-# trimui-terminal - trang thai du an (v0.2.8, 2026-10-02)
+# trimui-terminal - trang thai du an (v0.2.9, 2026-10-02)
 
 Repo doc lap: `Project APPS/Trimui-Terminal` (khong nam trong `chiaki-ng`).
-GitHub: `nlkcodenew/trimui-terminal`, branch `main`. Release moi nhat: `v0.2.8`.
+GitHub: `nlkcodenew/trimui-terminal`, branch `main`. Release moi nhat: `v0.2.9`.
 
 ## 1. Muc tieu goc
 
@@ -33,6 +33,7 @@ Snapshot goc giu tai `native/upstream-2.1.0/`, khong sua. Mọi patch nam truc t
 - v0.2.6: Viet hoa app (help/log/popup, khong dau) + README/docs.
 - v0.2.7: sua terminal den thui (ve lai sau burst output), OTA khong can python3 (shell + sha256sum), panel thoat to giua man hinh.
 - v0.2.8: Viet co dau toan app (DejaVu du 136/136 ky tu Viet) + banner version + README co dau.
+- v0.2.9: OTA chay nen + badge/popup thong bao cap nhat; sua banner khong bao gio hien; cache chu Viet (kich thuoc that, UTF8).
 
 ## 4. Quy trinh build + release (da chot, dung lai moi lan)
 

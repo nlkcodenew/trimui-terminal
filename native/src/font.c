@@ -777,6 +777,20 @@ int pick_osk_ttf_font(const char *font_path, int max_w, int max_h) {
 }
 int get_osk_ttf_char_width(void) { return osk_ttf_char_width; }
 int get_osk_ttf_char_height(void) { return osk_ttf_char_height; }
+/* Render text thanh surface moi (caller tu SDL_FreeSurface). Dung UTF8 API
+   ro rang de hien thi tieng Viet co dau chac chan. */
+SDL_Surface *render_osk_ttf_text(const char *text, SDL_Color fg, SDL_Color bg) {
+    if (!osk_ttf_font || !text || !*text) return NULL;
+    if (osk_ttf_font_shade == 2) return TTF_RenderUTF8_Shaded(osk_ttf_font, text, fg, bg);
+    if (osk_ttf_font_shade == 1) return TTF_RenderUTF8_Blended(osk_ttf_font, text, fg);
+    return TTF_RenderUTF8_Solid(osk_ttf_font, text, fg);
+}
+SDL_Surface *render_term_ttf_text(const char *text, SDL_Color fg, SDL_Color bg) {
+    if (!ttf_font || !text || !*text) return NULL;
+    if (ttf_font_shade == 2) return TTF_RenderUTF8_Shaded(ttf_font, text, fg, bg);
+    if (ttf_font_shade == 1) return TTF_RenderUTF8_Blended(ttf_font, text, fg);
+    return TTF_RenderUTF8_Solid(ttf_font, text, fg);
+}
 void draw_string_osk_ttf(SDL_Surface *surface, const char *text, int x, int y, SDL_Color fg, SDL_Color bg) {
     if (!osk_ttf_font || !surface || !text || !*text) return;
     SDL_Surface *ts = NULL;

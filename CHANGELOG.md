@@ -1,3 +1,8 @@
+## v0.2.9 - 2026-10-02
+
+- Thông báo cập nhật: OTA chạy nền (app mở ngay), hiện badge "Đang tải..." góc phải trong lúc tải, popup lớn "ĐÃ CẬP NHẬT LÊN vX - MỞ LẠI APP ĐỂ DÙNG" khi xong (đọc file .ota-status do ota-update.sh ghi).
+- Sửa banner/version không bao giờ hiện: bỏ dòng tự tắt help khi có TTF; banner hiện mỗi lần mở app đến khi bấm phím.
+- Chữ Việt ổn định: popup/banner/badge render 1 lần rồi cache (dùng kích thước thật của chữ, API UTF8 tường minh), không vẽ lại mỗi frame.
 ## v0.2.8 - 2026-10-02
 
 - Việt hóa có dấu toàn bộ app (xác minh font DejaVu kèm theo đủ 136/136 ký tự Việt) + README có dấu.

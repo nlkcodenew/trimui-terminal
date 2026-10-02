@@ -158,6 +158,13 @@ static volatile int thread_should_exit = 0;
 static volatile int tty_thread_done = 0;
 static volatile int tty_data_pending = 0; /* tty co output moi -> main ve lai */
 static int shutdown_called = 0;
+/* OTA badge: chu "Dang cap nhat..." goc phai khi ota-update.sh dang chay nen */
+static SDL_Surface *ota_badge = NULL;
+static char ota_badge_text[64] = "";
+static Uint32 ota_last_poll = 0;
+static int ota_done_shown = 0;
+static void trimui_free_popup_cache(void);
+static void trimui_free_ota_badge(void);
 extern volatile int trimui_thread_should_exit;
 extern volatile int trimui_child_exited;
 
@@ -296,6 +303,9 @@ void sdl_shutdown(void) {
         if (main_window.surface) SDL_FreeSurface(main_window.surface);
         if (osk_screen) SDL_FreeSurface(osk_screen);
         if (rotated_screen) SDL_FreeSurface(rotated_screen);
+        if (ota_badge) SDL_FreeSurface(ota_badge);
+        ota_badge = NULL;
+        trimui_free_popup_cache();
         main_window.surface = NULL;
         SDL_JoystickClose(joystick);
         SDL_Quit();
@@ -438,8 +448,23 @@ void create_tty_thread() {
 }
 
 /* Panel thong bao to, can giua man hinh (vd xac nhan thoat).
-   popup_message co the chua '|' de tach 2 dong. Dung font OSK to neu co. */
-static void draw_popup_box(SDL_Surface *s) {
+   popup_message co the chua '|' de tach 2 dong. Chu duoc render 1 lan roi
+   cache (dung kich thuoc that cua surface chu, khong uoc luong bang strlen
+   vi tieng Viet co dau so byte != so ky tu). */
+static char popup_cache_key[256] = "";
+static SDL_Surface *popup_line1 = NULL;
+static SDL_Surface *popup_line2 = NULL;
+static void trimui_free_popup_cache(void) {
+    if (popup_line1) SDL_FreeSurface(popup_line1);
+    if (popup_line2) SDL_FreeSurface(popup_line2);
+    popup_line1 = popup_line2 = NULL;
+    popup_cache_key[0] = '\0';
+}
+static void trimui_ensure_popup_cache(void) {
+    if (strcmp(popup_message, popup_cache_key) == 0) return;
+    trimui_free_popup_cache();
+    if (!popup_message[0]) return;
+    snprintf(popup_cache_key, sizeof(popup_cache_key), "%s", popup_message);
     char l1[200], l2[200];
     const char *sep = strchr(popup_message, '|');
     if (sep) {
@@ -452,27 +477,41 @@ static void draw_popup_box(SDL_Surface *s) {
         snprintf(l1, sizeof(l1), "%s", popup_message);
         l2[0] = '\0';
     }
-    int use_osk = is_osk_ttf_loaded();
-    int cw, ch;
-    if (use_osk) {
-        cw = get_osk_ttf_char_width();
-        ch = get_osk_ttf_char_height();
+    SDL_Color fg = {255, 255, 128, 255};
+    SDL_Color bg = {0, 0, 0, 255};
+    if (is_osk_ttf_loaded()) {
+        popup_line1 = render_osk_ttf_text(l1, fg, bg);
+        if (l2[0]) popup_line2 = render_osk_ttf_text(l2, fg, bg);
     } else if (is_ttf_loaded()) {
-        cw = get_ttf_char_width();
-        ch = get_ttf_char_height();
-    } else {
-        cw = get_embedded_font_char_width(embedded_font_name);
-        ch = get_embedded_font_char_height(embedded_font_name);
+        popup_line1 = render_term_ttf_text(l1, fg, bg);
+        if (l2[0]) popup_line2 = render_term_ttf_text(l2, fg, bg);
     }
-    if (cw <= 0) cw = 6;
-    if (ch <= 0) ch = 8;
-    int nlines = l2[0] ? 2 : 1;
-    int maxlen = (int)strlen(l1);
-    if (l2[0] && (int)strlen(l2) > maxlen) maxlen = (int)strlen(l2);
-    int w = maxlen * cw + 48;
+    /* Khong TTF: giu NULL, draw_popup_box se ve bitmap truc tiep. */
+}
+static void draw_popup_box(SDL_Surface *s) {
+    trimui_ensure_popup_cache();
+    if (!is_osk_ttf_loaded() && !is_ttf_loaded()) {
+        /* Du phong bitmap (hiem): chu nho nhu cu. */
+        SDL_Rect rect = {borderpx, s->h / 2 - 4, s->w - borderpx * 2, 14};
+        SDL_FillRect(s, &rect, SDL_MapRGB(s->format, 128, 128, 128));
+        char flat[256];
+        snprintf(flat, sizeof(flat), "%s", popup_message);
+        for (char *p = flat; *p; p++) {
+            if (*p == '|') *p = ' ';
+        }
+        draw_string(s, flat, rect.x + 2, rect.y + 4, SDL_MapRGB(s->format, 255, 255, 128), embedded_font_name);
+        return;
+    }
+    if (!popup_line1) return;
+    int w1 = popup_line1->w, h1 = popup_line1->h;
+    int w2 = popup_line2 ? popup_line2->w : 0;
+    int h2 = popup_line2 ? popup_line2->h : 0;
+    int maxw = w1 > w2 ? w1 : w2;
+    int w = maxw + 48;
     if (w > s->w - 16) w = s->w - 16;
     if (w < 200) w = 200;
-    int h = nlines * ch + 36;
+    int h = h1 + h2 + 36;
+    if (popup_line2) h += 6;
     int x = (s->w - w) / 2;
     if (x < 8) x = 8;
     int y = s->h * 28 / 100;
@@ -483,21 +522,69 @@ static void draw_popup_box(SDL_Surface *s) {
     SDL_Rect inner = {x + 3, y + 3, w - 6, h - 6};
     SDL_FillRect(s, &outer, SDL_MapRGB(s->format, 255, 255, 128));
     SDL_FillRect(s, &inner, SDL_MapRGB(s->format, 0, 0, 0));
-    SDL_Color fg = {255, 255, 128, 255};
+    SDL_Rect d1 = {x + (w - w1) / 2, y + 18, w1, h1};
+    SDL_BlitSurface(popup_line1, NULL, s, &d1);
+    if (popup_line2) {
+        SDL_Rect d2 = {x + (w - w2) / 2, y + 18 + h1 + 6, w2, h2};
+        SDL_BlitSurface(popup_line2, NULL, s, &d2);
+    }
+}
+
+/* OTA: doc file .ota-status (do ota-update.sh ghi khi chay nen) de hien
+   badge "Dang tai..." goc phai + popup bao khi cap nhat xong. */
+static void trimui_free_ota_badge(void) {
+    if (ota_badge) SDL_FreeSurface(ota_badge);
+    ota_badge = NULL;
+    ota_badge_text[0] = '\0';
+}
+static void trimui_set_ota_badge(const char *txt) {
+    if (ota_badge && strcmp(txt, ota_badge_text) == 0) return;
+    trimui_free_ota_badge();
+    snprintf(ota_badge_text, sizeof(ota_badge_text), "%s", txt);
+    SDL_Color fg = {128, 255, 128, 255};
     SDL_Color bg = {0, 0, 0, 255};
-    Uint16 fg16 = SDL_MapRGB(s->format, fg.r, fg.g, fg.b);
-    for (int li = 0; li < nlines; li++) {
-        const char *txt = (li == 0) ? l1 : l2;
-        int tw = (int)strlen(txt) * cw;
-        int tx = x + (w - tw) / 2;
-        if (tx < x + 8) tx = x + 8;
-        int ty = y + 18 + li * ch;
-        if (use_osk)
-            draw_string_osk_ttf(s, txt, tx, ty, fg, bg);
-        else if (is_ttf_loaded())
-            draw_string_ttf(s, txt, tx, ty, fg, bg);
-        else
-            draw_string(s, txt, tx, ty, fg16, embedded_font_name);
+    if (is_osk_ttf_loaded())
+        ota_badge = render_osk_ttf_text(txt, fg, bg);
+    else if (is_ttf_loaded())
+        ota_badge = render_term_ttf_text(txt, fg, bg);
+    /* Khong TTF: bo badge, khong bao loi. */
+}
+static void trimui_poll_ota(void) {
+    Uint32 now = SDL_GetTicks();
+    if (now - ota_last_poll < 1000) return;
+    ota_last_poll = now;
+    FILE *f = fopen(".ota-status", "r");
+    if (!f) return;
+    char st[128];
+    if (!fgets(st, sizeof(st), f)) {
+        fclose(f);
+        return;
+    }
+    fclose(f);
+    st[strcspn(st, "\r\n")] = '\0';
+    if (strncmp(st, "done ", 5) == 0) {
+        const char *ver = st + 5;
+        int is_new = 1;
+#ifdef VERSION
+        if (strcmp(ver, VERSION) == 0) is_new = 0;
+#endif
+        if (is_new && !ota_done_shown) {
+            ota_done_shown = 1;
+            snprintf(popup_message, sizeof(popup_message), "ĐÃ CẬP NHẬT LÊN v%s|MỞ LẠI APP ĐỂ DÙNG", ver);
+            SDL_AddTimer(12000, clear_popup_timer, NULL);
+        }
+        remove(".ota-status");
+        trimui_free_ota_badge();
+    } else if (strncmp(st, "downloading ", 12) == 0) {
+        char b[80];
+        snprintf(b, sizeof(b), "Đang tải %s...", st + 12);
+        trimui_set_ota_badge(b);
+    } else if (strcmp(st, "checking") == 0) {
+        trimui_set_ota_badge("Đang kiểm tra...");
+    } else {
+        /* failed...: xoa lang, chi tiet xem Terminal-ota.log */
+        remove(".ota-status");
+        trimui_free_ota_badge();
     }
 }
 
@@ -510,6 +597,12 @@ void update_render(void) {
         draw_popup_box(osk_screen);
     }
     draw_keyboard(osk_screen);  // osk_screen(SW) = console + keyboard
+    if (ota_badge) { /* badge OTA goc tren-phai */
+        SDL_Rect bd = {osk_screen->w - ota_badge->w - 8, 8, ota_badge->w, ota_badge->h};
+        SDL_Rect bgrect = {bd.x - 4, bd.y - 3, bd.w + 8, bd.h + 6};
+        SDL_FillRect(osk_screen, &bgrect, SDL_MapRGB(osk_screen->format, 0, 0, 0));
+        SDL_BlitSurface(ota_badge, NULL, osk_screen, &bd);
+    }
     // Update texture with screen pixels and render
     SDL_RenderClear(main_window.renderer);
     if (opt_rotate == 90 || opt_rotate == 270) {
@@ -1287,6 +1380,9 @@ void main_loop(void) {
             draw(); /* ve terminal + present */
             should_rerender = 0;
         }
+
+        /* OTA nen: hien badge/popup thong bao tien trinh cap nhat. */
+        trimui_poll_ota();
 
         if (should_rerender) {
             update_render();  // redraw the screen
