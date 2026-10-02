@@ -22,7 +22,10 @@ Apps/TrimuiTerminal/icon.png
 Apps/TrimuiTerminal/bt-survey.sh
 Apps/TrimuiTerminal/bin/trimui-terminal
 Apps/TrimuiTerminal/assets/fallback.ttf
+Apps/TrimuiTerminal/assets/intro.png
 ```
+
+4. Thao the an toan, lap vao may, mo **Trimui Terminal**. Luc mo app hien splash NLK ~1 giay (tat bang `TERMINAL_NO_INTRO=1`, file `intro.off`, hoac `"intro": false` trong `config.json`).
 
 4. Thao the an toan, lap vao may, mo **Trimui Terminal**.
 

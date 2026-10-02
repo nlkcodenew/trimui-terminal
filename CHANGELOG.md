@@ -1,3 +1,7 @@
+## v0.3.1 - 2026-10-02
+
+- Intro splash NLK tĩnh ~1s khi mở app: ảnh `assets/intro.png` 1024x768 render sẵn bằng Pillow (`python tools/render_intro.py`), nền (8,8,12) + chữ đỏ #E50914, chiếu bằng fim/fbv/fbi (thử lần lượt, có `-a` auto-scale, không có thì bỏ qua êm).
+- Tắt intro: `TERMINAL_NO_INTRO=1`, hoặc file `intro.off` / `.no-intro` cạnh `launch.sh`, hoặc `"intro": false` trong `config.json` (mặc định bật). Không bao giờ chặn boot: mọi lỗi câm, luôn chạy tiếp `trimui-terminal`.
 ## v0.3.0 - 2026-10-02
 
 - Sửa vỡ font tiếng Việt: `TTF_RenderText_*` trên SDL_ttf của máy hiểu chuỗi theo Latin-1 (chữ UTF-8 thành `Báº¥m...`); chuyển toàn bộ sang `TTF_RenderUTF8_*`.
