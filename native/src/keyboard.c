@@ -86,41 +86,43 @@ void init_keyboard(int _embedded_font_name, int _use_embedded_font_for_keyboard)
     }
 }
 
+/* Huong dan tieng Viet (co dau). Duong TTF (thiet bi that) hien thi day du;
+   duong bitmap chi dung khi mat ca 2 font TTF (hiem) se khong hien duoc dau. */
 char *help1 =
-    "Huong dan su dung:\n"
-    "  DPAD: chon phim tren ban phim ao\n"
-    "  A: go phim dang chon\n"
-    "  B 2 lan: thoat app (lan 1 hien xac nhan, A de huy)\n"
-    "  L1: shift\n"
-    "  R1: giu/nha phim (shift/ctrl...)\n"
-    "  Y: doi vi tri ban phim (tren/duoi)\n"
-    "  X: an / hien ban phim\n"
-    "  START: enter\n"
-    "  SELECT: tab\n"
-    "  SELECT+START / MENU: thoat app\n"
-    "  L2 / R2: trai / phai (tat ban phim: cuon lich su)\n\n"
-    "Lenh hay dung (hoc tai www.shellscript.sh):\n"
-    "  TAB           goi y duong dan\n"
-    "  UP/DOWN       xem lai lich su lenh\n"
-    "  pwd           xem thu muc hien tai\n"
-    "  ls            liet ke file (-l xem dung luong)\n"
-    "  cd <d>        doi thu muc (.. = len tren)\n"
-    "  cp <f> <d>    chep file (dich co the la thu muc)\n"
-    "  mv <f> <d>    di chuyen file\n"
-    "  rm <f>        xoa file (-rf de xoa thu muc)\n\n";
+    "Hướng dẫn sử dụng:\n"
+    "  DPAD: chọn phím trên bàn phím ảo\n"
+    "  A: gõ phím đang chọn\n"
+    "  B 2 lần: thoát app (lần 1 hiện xác nhận, A để hủy)\n"
+    "  L1: Shift\n"
+    "  R1: giữ/nhả phím (Shift/Ctrl...)\n"
+    "  Y: đổi vị trí bàn phím (trên/dưới)\n"
+    "  X: ẩn / hiện bàn phím\n"
+    "  START: Enter\n"
+    "  SELECT: Tab\n"
+    "  SELECT+START / MENU: thoát app\n"
+    "  L2 / R2: trái / phải (tắt bàn phím: cuộn lịch sử)\n\n"
+    "Lệnh hay dùng (học tại www.shellscript.sh):\n"
+    "  TAB           gợi ý đường dẫn\n"
+    "  UP/DOWN       xem lại lịch sử lệnh\n"
+    "  pwd           xem thư mục hiện tại\n"
+    "  ls            liệt kê file (-l xem dung lượng)\n"
+    "  cd <d>        đổi thư mục (.. = lên trên)\n"
+    "  cp <f> <d>    chép file (đích có thể là thư mục)\n"
+    "  mv <f> <d>    di chuyển file\n"
+    "  rm <f>        xóa file (-rf để xóa thư mục)\n\n";
 
 char *help2 =
-    "Huong dan su dung:\n"
-    "  DPAD: chon phim tren ban phim ao\n"
-    "  A: go phim dang chon\n"
-    "  B 2 lan: thoat app (lan 1 hien xac nhan, A de huy)\n"
-    "  L1: shift\n"
-    "  R1: giu/nha phim (shift/ctrl...)\n"
-    "  Y: doi vi tri ban phim (tren/duoi)\n"
-    "  X: an / hien ban phim\n"
-    "  START: enter\n"
-    "  SELECT: tab\n"
-    "  SELECT+START / MENU: thoat app\n\n";
+    "Hướng dẫn sử dụng:\n"
+    "  DPAD: chọn phím trên bàn phím ảo\n"
+    "  A: gõ phím đang chọn\n"
+    "  B 2 lần: thoát app (lần 1 hiện xác nhận, A để hủy)\n"
+    "  L1: Shift\n"
+    "  R1: giữ/nhả phím (Shift/Ctrl...)\n"
+    "  Y: đổi vị trí bàn phím (trên/dưới)\n"
+    "  X: ẩn / hiện bàn phím\n"
+    "  START: Enter\n"
+    "  SELECT: Tab\n"
+    "  SELECT+START / MENU: thoát app\n\n";
 
 #define CREDIT "@haoict (c) 2025"
 
@@ -136,12 +138,19 @@ void draw_keyboard(SDL_Surface *surface) {
     }
     if (show_help) {
         SDL_FillRect(surface, NULL, text_color);
+#ifdef VERSION
+        char banner_str[64];
+        snprintf(banner_str, sizeof(banner_str), "Trimui Terminal v%s", VERSION);
+#else
+        const char *banner_str = "Trimui Terminal";
+#endif
         if (is_ttf_loaded()) {
             // Use TTF rendering
-            draw_string_ttf(surface, "Trimui Terminal", 2, 10, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
-            draw_string_ttf_with_linebreak(surface, embedded_font_name == 2 ? help2 : help1, 8, 30, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
+            draw_string_ttf(surface, banner_str, 2, 10, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
+            draw_string_ttf(surface, "Bấm phím bất kỳ để bắt đầu", 2, 32, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
+            draw_string_ttf_with_linebreak(surface, embedded_font_name == 2 ? help2 : help1, 8, 56, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
         } else {
-            draw_string(surface, "Trimui Terminal", 2, 10, sel_toggled_color, embedded_font_name);
+            draw_string(surface, banner_str, 2, 10, sel_toggled_color, embedded_font_name);
             draw_string(surface, embedded_font_name == 2 ? help2 : help1, 8, 30, sel_color, embedded_font_name);
         }
 #ifdef VERSION
@@ -401,7 +410,7 @@ int handle_keyboard_event(SDL_Event *event) {
         int now = trimui_ticks_ms();
         if (event->key.keysym.sym == JOYBUTTON_B) {
             if (quit_confirm_until && now < quit_confirm_until) {
-                printf("B lan 2: thoat app\n");
+                printf("B lần 2: thoát app\n");
                 quit_confirm_until = 0;
                 trimui_request_quit();
                 return 1;
@@ -425,7 +434,7 @@ int handle_keyboard_event(SDL_Event *event) {
         if (event->key.keysym.sym == JOYBUTTON_SELECT) quit_combo_select = held_now;
         else if (event->key.keysym.sym == JOYBUTTON_START) quit_combo_start = held_now;
         if (quit_combo_select && quit_combo_start) {
-            printf("Thoat app (SELECT+START)\n");
+            printf("Thoát app (SELECT+START)\n");
             SDL_Event quit_event;
             quit_event.type = SDL_QUIT;
             SDL_PushEvent(&quit_event);
@@ -441,7 +450,7 @@ int handle_keyboard_event(SDL_Event *event) {
             return 1;
         }
 #endif
-        printf("Thoat app (phim Exit)\n");
+        printf("Thoát app (phím Exit)\n");
         SDL_Event quit_event;
         quit_event.type = SDL_QUIT;
         SDL_PushEvent(&quit_event);
@@ -449,7 +458,7 @@ int handle_keyboard_event(SDL_Event *event) {
     }
 
     if (event->key.type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_RETURN && selected_j == 5 && selected_i == 9) {
-        printf("Thoat app (Enter + phim Exit)\n");
+        printf("Thoát app (Enter + phím Exit)\n");
         SDL_Event quit_event;
         quit_event.type = SDL_QUIT;
         SDL_PushEvent(&quit_event);
@@ -469,7 +478,7 @@ int handle_keyboard_event(SDL_Event *event) {
         if (event->key.type == SDL_KEYDOWN) {
             switch (event->key.keysym.sym) {
                 case SDLK_PRINTSCREEN:
-                    printf("Chup anh man hinh\n");
+                    printf("Chụp ảnh màn hình\n");
                     SDL_Event screenshotEvent;
                     screenshotEvent.type = SDL_USEREVENT;
                     screenshotEvent.user.code = 1;
@@ -552,7 +561,7 @@ int handle_keyboard_event(SDL_Event *event) {
             if (selected_j == 4 && (selected_i == 0 || selected_i == 11)) shifted = toggled[selected_j][selected_i];
         } else if (event->key.keysym.sym == KEY_ENTER) {
             if (selected_j == 5 && selected_i == 9) {
-                printf("Thoat app (phim Exit ao)\n");
+                printf("Thoát app (phím Exit ảo)\n");
                 SDL_Event quit_event;
                 quit_event.type = SDL_QUIT;
                 SDL_PushEvent(&quit_event);

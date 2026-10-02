@@ -75,8 +75,8 @@ shell_download_files() {
     /"path"/ { p=$0; sub(/.*"path"[[:space:]]*:[[:space:]]*"/, "", p); sub(/".*/, "", p) }
     /"sha256"/ { s=$0; sub(/.*"sha256"[[:space:]]*:[[:space:]]*"/, "", s); sub(/".*/, "", s); if (p != "" && s != "") print p "|" s; p=""; s="" }
   ' "$MANIFEST_JSON" > "$LIST" 2>/dev/null
-  [ -s "$LIST" ] || { say "khong doc duoc danh sach file"; return 1; }
-  command -v sha256sum >/dev/null 2>&1 || { say "thieu sha256sum de verify"; return 1; }
+  [ -s "$LIST" ] || { say "Không đọc được danh sách file"; return 1; }
+  command -v sha256sum >/dev/null 2>&1 || { say "Thiếu sha256sum để kiểm tra"; return 1; }
   while IFS= read -r e; do
     rel="${e%%|*}"; want="${e##*|}"
     [ -n "$rel" ] && [ -n "$want" ] || return 1
@@ -84,21 +84,21 @@ shell_download_files() {
     for b in $BASES; do
       if fetch "$b/$rel" "$TMPD.dl.tmp"; then got="$TMPD.dl.tmp"; break; fi
     done
-    [ -n "$got" ] || { say "khong tai duoc: $rel"; return 1; }
+    [ -n "$got" ] || { say "Không tải được: $rel"; return 1; }
     have="$(sha256sum "$got" 2>/dev/null | cut -d' ' -f1)"
-    if [ "$have" != "$want" ]; then say "sai hash: $rel"; rm -f "$got"; return 1; fi
+    if [ "$have" != "$want" ]; then say "Sai mã kiểm tra: $rel"; rm -f "$got"; return 1; fi
     dst="$TMPD/$rel"
     mkdir -p "$(dirname "$dst")" 2>/dev/null
     mv "$got" "$dst" || return 1
     say "ok $rel"
   done < "$LIST"
   n="$(wc -l < "$LIST" 2>/dev/null | tr -d ' ')"
-  say "STAGED $n file(s)"
+  say "Đã tải xong $n file"
   return 0
 }
 MANIFEST_JSON="$TMPD.manifest.json"
 rm -rf "$TMPD" "$MANIFEST_JSON"
-mkdir -p "$TMPD" 2>/dev/null || { say "khong tao duoc staging"; exit 1; }
+mkdir -p "$TMPD" 2>/dev/null || { say "Không tạo được thư mục tạm"; exit 1; }
 if [ "$CHANNEL" = "latest" ]; then
   MURL="https://raw.githubusercontent.com/$REPO/main/manifest.json"
 else
@@ -112,32 +112,32 @@ for try in 1 2; do
   fi
   [ "$try" = "1" ] && sleep 3
 done
-[ "$got_manifest" = "1" ] || { say "khong tai duoc manifest"; exit 1; }
+[ "$got_manifest" = "1" ] || { say "Không tải được danh mục bản mới"; exit 1; }
 # Parse version (dung sys.argv, khong loi quote). Fallback grep neu thieu python3.
 REM=""
 if command -v python3 >/dev/null 2>&1; then
   REM="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1], encoding="utf-8")).get("version",""))' "$MANIFEST_JSON" 2>/dev/null)"
 fi
 [ -n "$REM" ] || REM="$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$MANIFEST_JSON" 2>/dev/null | head -n 1 | sed 's/.*"\([^"]*\)"$/\1/')"
-[ -n "$REM" ] || { say "manifest khong co version"; exit 1; }
+[ -n "$REM" ] || { say "Danh mục thiếu số phiên bản"; exit 1; }
 say "remote=$REM"
 if ! ver_newer "$REM" "$CUR"; then
-  say "da la ban moi nhat ($CUR)"
+  say "Đã là bản mới nhất ($CUR)"
   rm -rf "$TMPD" "$MANIFEST_JSON"
   exit 2
 fi
 if [ "${1:-}" = "--check" ]; then
-  say "co ban moi: $REM (local $CUR). Chay sh ota-update.sh --apply de cap nhat."
+  say "Có bản mới: $REM (đang dùng $CUR). Chạy sh ota-update.sh --apply để cập nhật."
   rm -rf "$TMPD" "$MANIFEST_JSON"
   exit 10
 fi
 BASES="https://raw.githubusercontent.com/$REPO/v$REM/files https://raw.githubusercontent.com/$REPO/main/files https://cdn.jsdelivr.net/gh/$REPO@v$REM/files"
 if [ "${1:-}" != "--apply" ]; then
-  printf "Co ban moi %s (hien tai %s). Cap nhat? [y/N] " "$REM" "$CUR"
+  printf "Có bản mới %s (hiện tại %s). Cập nhật? [y/N] " "$REM" "$CUR"
   read -r ans
-  case "$ans" in y|Y|yes|YES) ;; *) say "huy bo"; rm -rf "$TMPD" "$MANIFEST_JSON"; exit 3;; esac
+  case "$ans" in y|Y|yes|YES) ;; *) say "Đã hủy"; rm -rf "$TMPD" "$MANIFEST_JSON"; exit 3;; esac
 fi
-say "tai $REM ..."
+say "Đang tải $REM ..."
 DL_OK=0
 if command -v python3 >/dev/null 2>&1; then
 python3 - "$MANIFEST_JSON" "$TMPD" "$BASES" "$CA" <<PYEOF && DL_OK=1
@@ -181,13 +181,13 @@ print("STAGED %d file(s)" % len(files))
 PYEOF
 fi
 if [ "$DL_OK" != "1" ]; then
-  say "thu tai bang shell (may khong co python3)..."
+  say "Thử tải bằng shell (máy không có python3)..."
   if shell_download_files; then DL_OK=1; fi
 fi
-if [ "$DL_OK" != "1" ]; then say "tai file that bai"; rm -rf "$TMPD" "$MANIFEST_JSON"; exit 1; fi
+if [ "$DL_OK" != "1" ]; then say "Tải file thất bại"; rm -rf "$TMPD" "$MANIFEST_JSON"; exit 1; fi
 # Apply: khong dung pipe-while (exit trong subshell khong lan ra ngoai).
 LIST="$TMPD.apply.list"
-(cd "$TMPD" && find . -type f -print > "$LIST") || { say "apply that bai"; rm -rf "$TMPD" "$MANIFEST_JSON"; exit 1; }
+(cd "$TMPD" && find . -type f -print > "$LIST") || { say "Cài đặt thất bại"; rm -rf "$TMPD" "$MANIFEST_JSON"; exit 1; }
 APPLY_FAIL=0
 while IFS= read -r f; do
   [ -n "$f" ] || continue
@@ -197,13 +197,13 @@ while IFS= read -r f; do
   dst="$APP/$rel"
   mkdir -p "$(dirname "$dst")" 2>/dev/null
   tmp="$dst.ota-new"
-  if ! cp "$TMPD/$rel" "$tmp" 2>/dev/null; then say "copy that bai: $rel"; APPLY_FAIL=1; break; fi
+  if ! cp "$TMPD/$rel" "$tmp" 2>/dev/null; then say "Chép thất bại: $rel"; APPLY_FAIL=1; break; fi
   case "$rel" in *.sh|bin/*) chmod +x "$tmp" 2>/dev/null;; esac
-  if ! mv "$tmp" "$dst" 2>/dev/null; then say "apply that bai: $rel"; APPLY_FAIL=1; break; fi
+  if ! mv "$tmp" "$dst" 2>/dev/null; then say "Cài đặt thất bại: $rel"; APPLY_FAIL=1; break; fi
 done < "$LIST"
 if [ "$APPLY_FAIL" != "0" ]; then rm -rf "$TMPD" "$MANIFEST_JSON"; exit 1; fi
 cd "$APP" || exit 1
 printf "%s" "$REM" | tr -d " \r\n" > "$APP/VERSION" 2>/dev/null
-say "cap nhat xong $CUR -> $REM. Thoat app va mo lai."
+say "Cập nhật xong $CUR -> $REM. Thoát app và mở lại."
 rm -rf "$TMPD" "$MANIFEST_JSON"
 exit 0

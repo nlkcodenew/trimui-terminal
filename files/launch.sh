@@ -12,7 +12,7 @@ export LD_LIBRARY_PATH="$APP/libs:/usr/trimui/lib:/usr/lib64:/usr/lib:/lib:$LD_L
 BIN="$APP/bin/trimui-terminal"
 ERRLOG="$APP/Terminal-loi.txt"
 if [ ! -x "$BIN" ]; then
-  echo "trimui-terminal chua co hoac thieu quyen thuc thi" > "$ERRLOG" 2>/dev/null
+  echo "Không thấy trimui-terminal hoặc thiếu quyền chạy" > "$ERRLOG" 2>/dev/null
   exit 1
 fi
 touch /tmp/stay_alive 2>/dev/null

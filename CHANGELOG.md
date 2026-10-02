@@ -1,3 +1,7 @@
+## v0.2.8 - 2026-10-02
+
+- Việt hóa có dấu toàn bộ app (xác minh font DejaVu kèm theo đủ 136/136 ký tự Việt) + README có dấu.
+- Banner màn hình giúp đỡ hiện tên + số phiên bản ("Trimui Terminal v0.2.8") và dòng gợi ý.
 ## v0.2.7 - 2026-10-02
 
 - Sua terminal den thui (chi thay ban phim): ban va 0.2.4 doi select() sang timeout 200ms nhung continue luon, bo qua SDL_PushEvent ve lai -> terminal khong bao gio repaint. Khoi phuc ve lai sau moi burst output + co tty_data_pending + ve khung ngay khi mo app.

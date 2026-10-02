@@ -258,7 +258,7 @@ void trimui_request_quit(void) {
     SDL_PushEvent(&q);
 }
 void trimui_show_quit_confirm(void) {
-    snprintf(popup_message, sizeof(popup_message), "B LAN NUA DE THOAT|A DE HUY");
+    snprintf(popup_message, sizeof(popup_message), "BẤM B LẦN NỮA ĐỂ THOÁT|A ĐỂ HỦY");
     SDL_AddTimer(4000, clear_popup_timer, NULL);
 }
 void trimui_hide_quit_confirm(void) {
@@ -267,7 +267,7 @@ void trimui_hide_quit_confirm(void) {
 void sdl_shutdown(void) {
     if (SDL_WasInit(SDL_INIT_EVERYTHING) != 0 && !shutdown_called) {
         shutdown_called = 1;
-        fprintf(stderr, "Dang thoat Terminal\n");
+        fprintf(stderr, "Đang thoát Terminal\n");
         /* Chan SIGCHLD handler tu dong exit (se deadlock voi WaitThread). */
         signal(SIGCHLD, SIG_DFL);
         thread_should_exit = 1;
@@ -283,7 +283,7 @@ void sdl_shutdown(void) {
             if (tty_thread_done) {
                 SDL_WaitThread(thread, NULL);
             } else {
-                fprintf(stderr, "Luong tty ket sau 2s, bo qua cho (thoat se thu hoi)\n");
+                fprintf(stderr, "Luồng tty kẹt sau 2s, bỏ qua chờ (thoát sẽ thu hồi)\n");
             }
             thread = NULL;
         }
@@ -1128,9 +1128,9 @@ void take_screenshot() {
 
     if (main_window.surface) {
         if (SDL_SaveBMP(main_window.surface, filename) == 0) {
-            sprintf(popup_message, "Da luu anh: %s", filename);
+            sprintf(popup_message, "Đã lưu ảnh: %s", filename);
         } else {
-            sprintf(popup_message, "Loi luu anh: %s", SDL_GetError());
+            sprintf(popup_message, "Lỗi lưu ảnh: %s", SDL_GetError());
         }
     }
 
