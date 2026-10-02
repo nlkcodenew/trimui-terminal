@@ -164,6 +164,29 @@ static char ota_badge_text[64] = "";
 static Uint32 ota_last_poll = 0;
 static int ota_done_shown = 0;
 static SDL_Surface *ver_label = NULL; /* nhan version nho goc phai man hinh terminal */
+/* Version hien thi: doc file VERSION (ota-update.sh ghi lai sau moi lan cap nhat
+   OTA) va fallback ve -DVERSION luc bien dich. Truoc day chi dung -DVERSION nen
+   nhan luon giu version cu trong khi app da cap nhat xong. */
+char app_version[32] = "";
+const char *terminal_version(void);
+static void load_app_version(void) {
+    FILE *vf = fopen("VERSION", "r");
+    if (vf) {
+        char buf[32];
+        if (fgets(buf, sizeof(buf), vf)) {
+            buf[strcspn(buf, "\r\n")] = '\0';
+            snprintf(app_version, sizeof(app_version), "%s", buf);
+        }
+        fclose(vf);
+    }
+    if (app_version[0] == '\0') {
+#ifdef VERSION
+        snprintf(app_version, sizeof(app_version), "%s", VERSION);
+#else
+        snprintf(app_version, sizeof(app_version), "%s", "0.0.0");
+#endif
+    }
+}
 static void trimui_free_popup_cache(void);
 static void trimui_free_ota_badge(void);
 extern volatile int trimui_thread_should_exit;
@@ -372,6 +395,8 @@ void scale_to_size(int width, int height) {
 void sdl_init(void) {
     fprintf(stderr, "SDL init\n");
 
+    load_app_version();
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
         fprintf(stderr, "Unable to initialize SDL: %s\n", SDL_GetError());
         exit(EXIT_FAILURE);
@@ -557,7 +582,13 @@ static void trimui_poll_ota(void) {
     if (now - ota_last_poll < 1000) return;
     ota_last_poll = now;
     FILE *f = fopen(".ota-status", "r");
-    if (!f) return;
+    if (!f) {
+        /* ota-update.sh xoa .ota-status khi xong (hoac chua chay). Badge "Dang
+           kiem tra..." phai bien mat ngay, nguoi dung truoc day thay no dinh
+           o goc phai ma khong co gi chay. */
+        trimui_free_ota_badge();
+        return;
+    }
     char st[128];
     if (!fgets(st, sizeof(st), f)) {
         fclose(f);
@@ -567,10 +598,9 @@ static void trimui_poll_ota(void) {
     st[strcspn(st, "\r\n")] = '\0';
     if (strncmp(st, "done ", 5) == 0) {
         const char *ver = st + 5;
-        int is_new = 1;
-#ifdef VERSION
-        if (strcmp(ver, VERSION) == 0) is_new = 0;
-#endif
+        /* Cap nhat that bai -> thong bao "mo lai app". Version dang chay lay
+           tu file VERSION, nen so sanh bang chinh no. */
+        int is_new = (strcmp(ver, app_version) != 0);
         if (is_new && !ota_done_shown) {
             ota_done_shown = 1;
             snprintf(popup_message, sizeof(popup_message), "ĐÃ CẬP NHẬT LÊN v%s|MỞ LẠI APP ĐỂ DÙNG", ver);
@@ -600,14 +630,12 @@ void update_render(void) {
         draw_popup_box(osk_screen);
     }
     draw_keyboard(osk_screen);  // osk_screen(SW) = console + keyboard
-#ifdef VERSION
-    /* Nhan version thuong truc goc tren-phai vung terminal. */
-    if (!ver_label && is_ttf_loaded()) {
+/* Nhan version thuong truc goc tren-phai vung terminal. */
+    if (!ver_label && is_ttf_loaded() && app_version[0]) {
         char vt[32];
-        snprintf(vt, sizeof(vt), "v%s", VERSION);
+        snprintf(vt, sizeof(vt), "v%s", app_version);
         ver_label = render_term_ttf_text(vt, (SDL_Color){150, 150, 150, 255}, (SDL_Color){0, 0, 0, 255});
     }
-#endif
     if (ver_label) {
         SDL_Rect vd = {osk_screen->w - ver_label->w - 6, 4, ver_label->w, ver_label->h};
         SDL_Rect vbg = {vd.x - 2, vd.y - 1, vd.w + 4, vd.h + 2};

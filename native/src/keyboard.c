@@ -126,6 +126,19 @@ char *help2 =
 
 #define CREDIT "@haoict (c) 2025"
 
+/* Version hien thi cua app. main.c doc file VERSION (ota-update.sh cap nhat
+   file nay) nen nhan + banner doi theo sau moi lan OTA, khong con phai bien
+   dich lai binary. Fallback ve -DVERSION. */
+const char *terminal_version(void) {
+    extern char app_version[32];
+    if (app_version[0] != '\0') return app_version;
+#ifdef VERSION
+    return VERSION;
+#else
+    return "0.0.0";
+#endif
+}
+
 void draw_keyboard(SDL_Surface *surface) {
     unsigned short bg_color = SDL_MapRGB(surface->format, 64, 64, 64);
     unsigned short key_color = SDL_MapRGB(surface->format, 128, 128, 128);
@@ -138,12 +151,10 @@ void draw_keyboard(SDL_Surface *surface) {
     /* Cache banner: render 1 lan (chu Viet on dinh + nhe CPU), ve lai khi doi kich thuoc. */
     static SDL_Surface *help_cache = NULL;
     static int help_cache_w = 0, help_cache_h = 0;
-#ifdef VERSION
+    /* Version lay tu terminal_version() (doc file VERSION nen OTA cap nhat
+       duoc ngay); fallback ve -DVERSION luc bien dich. */
     char banner_str[64];
-    snprintf(banner_str, sizeof(banner_str), "Trimui Terminal v%s", VERSION);
-#else
-    const char *banner_str = "Trimui Terminal";
-#endif
+    snprintf(banner_str, sizeof(banner_str), "Trimui Terminal v%s", terminal_version());
     if (show_help) {
         if (is_ttf_loaded()) {
             if (!help_cache || help_cache_w != surface->w || help_cache_h != surface->h) {
@@ -156,15 +167,11 @@ void draw_keyboard(SDL_Surface *surface) {
                     draw_string_ttf(help_cache, banner_str, 2, 10, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
                     draw_string_ttf(help_cache, "Bấm phím bất kỳ để bắt đầu", 2, 34, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
                     draw_string_ttf_with_linebreak(help_cache, embedded_font_name == 2 ? help2 : help1, 8, 60, (SDL_Color){128, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
-#ifdef VERSION
                     {
                         char credit_str[128];
-                        snprintf(credit_str, sizeof(credit_str), "Version %s - %s", VERSION, CREDIT);
+                        snprintf(credit_str, sizeof(credit_str), "Version %s - %s", terminal_version(), CREDIT);
                         draw_string_ttf(help_cache, credit_str, 2, help_cache->h - 30, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
                     }
-#else
-                    draw_string_ttf(help_cache, CREDIT, 2, help_cache->h - 30, (SDL_Color){255, 255, 128, 255}, (SDL_Color){0, 0, 0, 255});
-#endif
                 }
             }
             if (help_cache) SDL_BlitSurface(help_cache, NULL, surface, NULL);
@@ -173,26 +180,16 @@ void draw_keyboard(SDL_Surface *surface) {
             draw_string(surface, banner_str, 2, 10, sel_toggled_color, embedded_font_name);
             draw_string(surface, embedded_font_name == 2 ? help2 : help1, 8, 30, sel_color, embedded_font_name);
         }
-#ifdef VERSION
-        /* TTF: credit da ve san trong help_cache (duoi day). Bitmap: ve duoi day. */
+/* TTF: credit da ve san trong help_cache (duoi day). Bitmap: ve duoi day. */
         if (!is_ttf_loaded()) {
             char credit_str[128];
-            snprintf(credit_str, sizeof(credit_str), "Version %s - %s", VERSION, CREDIT);
+            snprintf(credit_str, sizeof(credit_str), "Version %s - %s", terminal_version(), CREDIT);
             if (embedded_font_name == 4 || embedded_font_name == 5) {
                 draw_string(surface, credit_str, 2, surface->h - 16, sel_toggled_color, embedded_font_name);
             } else {
                 draw_string(surface, credit_str, 2, surface->h - 12, sel_toggled_color, embedded_font_name);
             }
         }
-#else
-        if (!is_ttf_loaded()) {
-            if (embedded_font_name == 4 || embedded_font_name == 5) {
-                draw_string(surface, CREDIT, 2, surface->h - 16, sel_toggled_color, embedded_font_name);
-            } else {
-                draw_string(surface, CREDIT, 2, surface->h - 12, sel_toggled_color, embedded_font_name);
-            }
-        }
-#endif
         return;
     }
 

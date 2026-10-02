@@ -16,9 +16,17 @@ def check(cond, msg):
         FAIL.append(msg)
 
 def main():
+    with open(os.path.join(ROOT, "VERSION"), encoding="utf-8") as h:
+        version = h.read().strip().strip("vV")
     check(os.path.isfile(os.path.join(ROOT, "files", "launch.sh")), "launch.sh ton tai")
     check(os.path.isfile(os.path.join(ROOT, "files", "config.json")), "config.json ton tai")
     check(os.path.isfile(os.path.join(ROOT, "files", "icon.png")), "icon.png ton tai")
+    shipped = os.path.join(ROOT, "files", "VERSION")
+    shipped_version = open(shipped, encoding="utf-8").read().strip() if os.path.isfile(shipped) else ""
+    check(shipped_version == version,
+          "files/VERSION khop VERSION (%r)" % shipped_version)
+    check(os.path.isfile(os.path.join(ROOT, "files", "assets", "intro.png")),
+          "intro.png ton tai")
     check(os.path.isfile(BIN), "files/bin/trimui-terminal ton tai")
     if os.path.isfile(BIN):
         with open(BIN, "rb") as h:
@@ -30,6 +38,11 @@ def main():
         check("stay_alive" in s1, "launch.sh giu may tranh deep-suspend")
         cfg = json.load(open(os.path.join(ROOT, "files", "config.json"), encoding="utf-8"))
         check(cfg.get("launch") == "launch.sh", "config.json tro dung launch.sh")
+    with open(os.path.join(ROOT, "files", "ota-update.sh"), encoding="utf-8", errors="replace") as h:
+        ota = h.read()
+    check("$OTA_STATUS.tmp" in ota and 'mv "$OTA_STATUS.tmp" "$OTA_STATUS"' in ota,
+          "ota ghi .ota-status atomic (tranh badge dinh)")
+    check('> "$APP/VERSION"' in ota, "OTA ghi lai files/VERSION cho binary doc")
     zips = [f for f in os.listdir(DIST) if f.endswith(".zip")] if os.path.isdir(DIST) else []
     if zips:
         zp = os.path.join(DIST, sorted(zips)[-1])

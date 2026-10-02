@@ -1,8 +1,8 @@
 #!/bin/sh
-# Build trimui-terminal bang SDK TG5050 (da co san trong workspace).
+# Build trimui-terminal bang SDK TG5050 (ban sao trong WSL tai ~/tb/sdk).
 set -eu
-REPO_ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-SDK_ROOT="${SDK_ROOT:-$(CDPATH= cd -- "$REPO_ROOT/../sdk-tg5050/sdk_tg5050_linux_v1.0.0" && pwd)}"
+REPO_ROOT="${REPO_ROOT:-/mnt/e/Trimiu Brick Pro/Project APPS/Trimui-Terminal}"
+SDK_ROOT="${SDK_ROOT:-$HOME/tb/sdk}"
 VERSION="$(cat "$REPO_ROOT/VERSION" 2>/dev/null | tr -d " \r\n")"
 [ -n "$VERSION" ] || VERSION=0.1.0
 GCC="$SDK_ROOT/host/bin/aarch64-none-linux-gnu-gcc"

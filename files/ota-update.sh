@@ -12,6 +12,12 @@ VERSION_FILE="$APP/VERSION"
 [ -f "$VERSION_FILE" ] || VERSION_FILE="$APP/../VERSION"
 CUR="$(cat "$VERSION_FILE" 2>/dev/null | tr -d ' \r\n')"
 [ -n "$CUR" ] || CUR="0.0.0"
+# File VERSION trong app co the bi thieu/rot neu cai dat lai ZIP cung version
+# (OTA chay o background nen app dang mo). Version hien thi cua binary doc
+# chinh file nay, nen phai chuan hoa lai cho binary moi doc dung.
+if [ ! -f "$APP/VERSION" ] || [ "$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n')" != "$CUR" ]; then
+  printf "%s" "$CUR" > "$APP/VERSION" 2>/dev/null || true
+fi
 REPO="${TERMINAL_REPO:-nlkcodenew/trimui-terminal}"
 CHANNEL="${TERMINAL_CHANNEL:-latest}"
 CA="$APP/certs/cacert.pem"
@@ -19,9 +25,14 @@ LOG="$APP/Terminal-ota.log"
 TMPD="$APP/.update_staging"
 say() { echo "[ota] $*"; echo "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null) $*" >> "$LOG" 2>/dev/null; }
 # File trang thai de app hien thong bao (checking|downloading <ver>|done <ver>|failed).
+# Ghi atomic (ghi .tmp roi doi ten): app doc file 1 lan/giay, tranh doc ban va
+# lam badge "Dang kiem tra..." dinh o goc phai khi app vua mo.
 OTA_STATUS="$APP/.ota-status"
-ota_status() { printf "%s" "$*" > "$OTA_STATUS" 2>/dev/null || true; }
-ota_clear() { rm -f "$OTA_STATUS" 2>/dev/null || true; }
+ota_status() {
+  printf "%s" "$*" > "$OTA_STATUS.tmp" 2>/dev/null || true
+  mv "$OTA_STATUS.tmp" "$OTA_STATUS" 2>/dev/null || rm -f "$OTA_STATUS.tmp" 2>/dev/null || true
+}
+ota_clear() { rm -f "$OTA_STATUS" "$OTA_STATUS.tmp" 2>/dev/null || true; }
 # So sanh version dang x.y.z (khong dung sort -V vi BusyBox co the thieu).
 ver_newer() {
   a="$1"; b="$2"
@@ -128,6 +139,8 @@ fi
 say "remote=$REM"
 if ! ver_newer "$REM" "$CUR"; then
   say "Đã là bản mới nhất ($CUR)"
+  # Ghi lai VERSION de binary doc dung (binary cu doc file nay, fallback -DVERSION).
+  printf "%s" "$CUR" > "$APP/VERSION" 2>/dev/null || true
   rm -rf "$TMPD" "$MANIFEST_JSON"
   ota_clear
   exit 2

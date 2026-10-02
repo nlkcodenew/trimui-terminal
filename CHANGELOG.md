@@ -1,3 +1,11 @@
+## v0.3.2 - 2026-10-02
+
+- Sửa OTA "cập nhật xong" nhưng app vẫn hiện version cũ: nhãn version + banner + credit giờ đọc file `VERSION` (do `ota-update.sh` ghi lại sau mỗi lần cập nhật) thay vì hằng `-DVERSION` lúc biên dịch. Bản v0.3.1 đã đóng gói y hệt binary của v0.3.0 (`-DVERSION="0.3.0"`) nên không bao giờ đổi nhãn.
+- Sửa badge "Đang kiểm tra..." dính vĩnh viễn ở góc phải: trước đây khi OTA xong và xoá `.ota-status`, binary không xoá badge. Badge giờ bị xoá khi file trạng thái biến mất.
+- Sửa `.ota-status` ghi không atomic (app có thể đọc file rỗng lúc mới mở): ghi file tạm rồi `mv`.
+- `build.sh`/`native/build-tg5050.sh` dùng `SDK_ROOT` (mặc định `~/tb/sdk`) vì đường dẫn `/mnt/e/Trimiu Brick Pro/...` có khoảng trắng làm `make` fail.
+- `verify_release.py` chặn `files/VERSION` lệch với `VERSION` + kiểm tra `intro.png` tồn tại.
+
 ## v0.3.1 - 2026-10-02
 
 - Intro splash NLK tĩnh ~1s khi mở app: ảnh `assets/intro.png` 1024x768 render sẵn bằng Pillow (`python tools/render_intro.py`), nền (8,8,12) + chữ đỏ #E50914, chiếu bằng fim/fbv/fbi (thử lần lượt, có `-a` auto-scale, không có thì bỏ qua êm).

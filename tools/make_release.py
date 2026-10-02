@@ -25,6 +25,24 @@ def app_version():
     with open(VERSION_FILE, encoding="utf-8") as f:
         return f.read().strip().strip("vV")
 
+
+def sync_files_version(version):
+    """files/VERSION phai bang VERSION o goc.
+
+    OTA doc version tu files/VERSION va binary doc chinh file do de hien nhan.
+    Truoc day 2 file nay tro chuyen, nen ZIP v0.3.1 van mang VERSION=0.3.0.
+    """
+    target = os.path.join(FILES_DIR, "VERSION")
+    data = ("%s\n" % version).encode("ascii")
+    old = None
+    if os.path.isfile(target):
+        with open(target, "rb") as h:
+            old = h.read()
+    if old != data:
+        with open(target, "wb") as h:
+            h.write(data)
+        print("synced files/VERSION -> %s" % version)
+
 def sha256(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -50,6 +68,7 @@ def archive_add(archive, source, target, executable=False):
 def main():
     version = app_version()
     print("APP_VERSION = %s" % version)
+    sync_files_version(version)
     files = []
     total = 0
     for cur, dirs, names in os.walk(FILES_DIR):
