@@ -14,6 +14,7 @@ static char *opt_font = NULL;  // "1" or "2" for embedded fonts, or path to TTF 
 static int opt_fontsize = 16;
 static int opt_fontshade = 0;  // 0=solid, 1=blended, 2=shaded, only used if opt_font is set to a TTF font
 static int opt_use_embedded_font_for_keyboard = 0;
+static int opt_no_intro = 0;  // -nointro: bo qua logo khoi dong NLK
 
 static const Uint32 BUTTON_HELD_DELAY = 150;  // milliseconds between button triggers when held
 

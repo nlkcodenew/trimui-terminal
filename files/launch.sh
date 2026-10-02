@@ -25,45 +25,13 @@ if [ -x "$APP/ota-update.sh" ] && [ "$TERMINAL_NO_OTA" != "1" ]; then
     sh "$APP/ota-update.sh" --apply >> "$APP/Terminal-ota.log" 2>&1 &
   fi
 fi
-# NLK intro splash: anh tinh ~1s, trang tri, KHONG bao gio duoc lam hong boot.
-# Tat bang: TERMINAL_NO_INTRO=1, hoac file $APP/intro.off, hoac config.json "intro": false.
-if [ "$TERMINAL_NO_INTRO" != "1" ]; then
-  _INTRO_PNG="$APP/assets/intro.png"
-  _INTRO_OFF=0
-  if [ -f "$APP/intro.off" ] || [ -f "$APP/.no-intro" ]; then
-    _INTRO_OFF=1
-  elif command -v grep >/dev/null 2>&1; then
-    if grep -q '"intro"[[:space:]]*:[[:space:]]*false' "$APP/config.json" 2>/dev/null; then
-      _INTRO_OFF=1
-    fi
-  fi
-  if [ "$_INTRO_OFF" != "1" ] && [ -f "$_INTRO_PNG" ]; then
-    if command -v fim >/dev/null 2>&1; then
-      fim -q -a "$_INTRO_PNG" >/dev/null 2>&1 &
-      _INTRO_PID=$!
-      sleep 1 2>/dev/null || true
-      kill "$_INTRO_PID" 2>/dev/null || true
-    elif command -v fbv >/dev/null 2>&1; then
-      # fbv tuy build co/khong co co -a: co thi dung (auto-scale), khong thi chup nguyen.
-      _FBV_A=""
-      if fbv --help 2>/dev/null | grep -q -- "-a"; then
-        _FBV_A="-a"
-      fi
-      # shellcheck disable=SC2086
-      fbv $_FBV_A "$_INTRO_PNG" >/dev/null 2>&1 &
-      _INTRO_PID=$!
-      sleep 1 2>/dev/null || true
-      kill "$_INTRO_PID" 2>/dev/null || true
-      unset _FBV_A
-    elif command -v fbi >/dev/null 2>&1; then
-      fbi -a -T 1 --noverbose "$_INTRO_PNG" >/dev/null 2>&1 &
-      _INTRO_PID=$!
-      sleep 1 2>/dev/null || true
-      kill "$_INTRO_PID" 2>/dev/null || true
-    fi
-    unset _INTRO_PID
-  fi
-  unset _INTRO_PNG _INTRO_OFF
+# NLK intro (logo khoi dong) do CHINH BINARY ve bang SDL_ttf ngay khi app mo,
+# khong con dua vao fim/fbv/fbi: firmware nay khong co trinh xem framebuffer nao
+# nen cach do khong bao gio hien du co anh intro.png.
+# Tat intro: TERMINAL_NO_INTRO=1, file $APP/intro.off, $APP/.no-intro,
+# hoac config.json "intro": false (binary doc trong intro_disabled()).
+if [ "$TERMINAL_NO_INTRO" = "1" ]; then
+  export TERMINAL_NO_INTRO
 fi
 "$BIN" -scale 1 -fontsize 16 "$@" 2>> "$ERRLOG"
 CODE=$?

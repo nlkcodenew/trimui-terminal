@@ -30,7 +30,7 @@
 #include "keyboard.h"
 #include "vt100.h"
 
-#define USAGE "Trimui Terminal\nusage: simple-terminal [-h] [-scale 2.0] [-font font.ttf] [-fontsize 14] [-fontshade 0|1|2] [-rotate 0|90|180|270] [-o file] [-q] [-r command ...]\n"
+#define USAGE "Trimui Terminal\nusage: simple-terminal [-h] [-scale 2.0] [-font font.ttf] [-fontsize 14] [-fontshade 0|1|2] [-rotate 0|90|180|270] [-nointro] [-o file] [-q] [-r command ...]\n"
 
 /* Arbitrary sizes */
 #define DRAW_BUF_SIZ 20 * 1024
@@ -281,6 +281,108 @@ void sdl_load_fonts() {
             fprintf(stderr, "TTF font auto (osk): %s size %d -> %dx%d (max %dx%d)\n", osk_path, osk_size, get_osk_ttf_char_width(), get_osk_ttf_char_height(), osk_max_w, osk_max_h);
     }
 #endif
+}
+
+/* ---------- Intro NLK (logo khoi dong) ----------
+   Ve bang SDL_ttf trong chinh app. Phuong cach cu (launch.sh goi fim/fbv/fbi)
+   vo dung tren firmware nay: may thuong KHONG co trinh xem framebuffer nao,
+   nen intro khong bao gio hien. Ve trong app thi luon co hinh anh.
+   Thoi gian ~1s (app shell), bam phim bat ky de bo qua. */
+static int intro_disabled(void) {
+    const char *env = getenv("TERMINAL_NO_INTRO");
+    if (env && strcmp(env, "1") == 0) return 1;
+    if (access("intro.off", F_OK) == 0) return 1;
+    if (access(".no-intro", F_OK) == 0) return 1;
+    /* config.json: "intro": false */
+    FILE *cfg = fopen("config.json", "r");
+    if (!cfg) return 0;
+    char buf[2048];
+    size_t n = fread(buf, 1, sizeof(buf) - 1, cfg);
+    buf[n] = '\0';
+    fclose(cfg);
+    char *key = strstr(buf, "\"intro\"");
+    if (!key) return 0;
+    char *colon = strchr(key, ':');
+    if (!colon) return 0;
+    colon++;
+    while (*colon == ' ' || *colon == '\t') colon++;
+    return strncmp(colon, "false", 5) == 0;
+}
+
+static void trimui_play_intro(void) {
+    if (opt_no_intro || intro_disabled()) return;
+    if (!main_window.renderer || main_window.width <= 0 || main_window.height <= 0) return;
+
+    /* Co chu cao ~30% man hinh, giong ty le logo cua app khac. */
+    int size = main_window.height * 30 / 72;
+    if (size < 24) size = 24;
+    TTF_Font *font = NULL;
+    const char **fp = trimui_system_fonts;
+    while (*fp) {
+        font = TTF_OpenFont(*fp, size);
+        if (font) break;
+        fp++;
+    }
+    if (!font) {
+        fprintf(stderr, "intro: khong co TTF de ve logo NLK\n");
+        return;
+    }
+    SDL_Color red = {229, 9, 20, 255};
+    SDL_Color dark = {60, 5, 8, 255};
+    SDL_Surface *main_s = TTF_RenderUTF8_Blended(font, "NLK", red);
+    SDL_Surface *glow_s = TTF_RenderUTF8_Blended(font, "NLK", dark);
+    TTF_CloseFont(font);
+    if (!main_s) {
+        if (glow_s) SDL_FreeSurface(glow_s);
+        return;
+    }
+    SDL_Texture *main_t = SDL_CreateTextureFromSurface(main_window.renderer, main_s);
+    SDL_Texture *glow_t = glow_s ? SDL_CreateTextureFromSurface(main_window.renderer, glow_s) : NULL;
+    int sw = main_s->w, sh = main_s->h;
+    SDL_FreeSurface(main_s);
+    if (glow_s) SDL_FreeSurface(glow_s);
+    if (!main_t) {
+        if (glow_t) SDL_DestroyTexture(glow_t);
+        return;
+    }
+    /* Co vua man hinh nho: scale xuong + chieu cao toi da 62% man hinh. */
+    double scale = 1.0;
+    if (main_window.width - 80 < sw) scale = (double)(main_window.width - 80) / (double)sw;
+    if (main_window.height * 62 / 100 < sh) {
+        double by_h = (double)(main_window.height * 62 / 100) / (double)sh;
+        if (by_h < scale) scale = by_h;
+    }
+    if (scale < 0.05) scale = 0.05;
+    int dw = (int)(sw * scale), dh = (int)(sh * scale);
+    int dx = (main_window.width - dw) / 2, dy = (main_window.height - dh) / 2;
+
+    const Uint32 duration_ms = 1200;
+    Uint32 start = SDL_GetTicks();
+    SDL_Event ev;
+    while (SDL_GetTicks() - start < duration_ms) {
+        while (SDL_PollEvent(&ev)) {
+            Uint32 type = ev.type;
+            if (type == SDL_QUIT || type == SDL_KEYDOWN || type == SDL_JOYBUTTONDOWN ||
+                type == SDL_CONTROLLERBUTTONDOWN || type == SDL_JOYHATMOTION ||
+                type == SDL_CONTROLLERAXISMOTION)
+                goto intro_done; /* bo qua ngay */
+        }
+        SDL_SetRenderDrawColor(main_window.renderer, 8, 8, 12, 255);
+        SDL_RenderClear(main_window.renderer);
+        if (glow_t) {
+            int k = (int)(6 * scale);
+            SDL_Rect g = {dx + k * 2, dy + k * 2, dw, dh};
+            SDL_RenderCopy(main_window.renderer, glow_t, NULL, &g);
+        }
+        SDL_Rect r = {dx, dy, dw, dh};
+        SDL_RenderCopy(main_window.renderer, main_t, NULL, &r);
+        SDL_RenderPresent(main_window.renderer);
+        SDL_Delay(16);
+    }
+intro_done:
+    SDL_DestroyTexture(main_t);
+    if (glow_t) SDL_DestroyTexture(glow_t);
+    fprintf(stderr, "intro: NLK xong\n");
 }
 
 int trimui_ticks_ms(void) { return (int)SDL_GetTicks(); }
@@ -1542,6 +1644,11 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        if (strcmp(argv[i], "-nointro") == 0) {
+            opt_no_intro = 1;
+            continue;
+        }
+
         switch (argv[i][0] != '-' || argv[i][2] ? -1 : argv[i][1]) {
             case 'r':  // run commands from arguments, must be at the end of argv
                 if (++i < argc) {
@@ -1572,6 +1679,7 @@ int main(int argc, char *argv[]) {
     }
 
     sdl_init();
+    trimui_play_intro();
     {
         int content_w = main_window.surface ? main_window.surface->w : main_window.width;
         int content_h = main_window.surface ? main_window.surface->h : main_window.height;

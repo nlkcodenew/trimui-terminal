@@ -1,11 +1,11 @@
 {
-  "version": "0.3.2",
+  "version": "0.3.3",
   "app": "trimui-terminal",
-  "built": "2026-10-02T14:23:14+07:00",
+  "built": "2026-10-02T15:04:58+07:00",
   "files": [
     {
       "path": "VERSION",
-      "sha256": "511a100eedfb9ea66441e5d506392dba2d8aa290f98c4c544c70ae75ec3c3396",
+      "sha256": "a0dc8325e2fbe558e09bf7d61260ca378151b0a3f875dd8b46ecd3693e34c10b",
       "size": 6
     },
     {
@@ -25,13 +25,13 @@
     },
     {
       "path": "launch.sh",
-      "sha256": "3750e877b4546b1f9a6338933c6d2c0a756c9ba83f4b6320676b088d0f7b4287",
-      "size": 2509
+      "sha256": "366355ea6a5d93801de087cf5a5931eb6fffaf8a1f75c95a8201c44b79b9b522",
+      "size": 1460
     },
     {
       "path": "ota-update.sh",
-      "sha256": "511d8aaf5c9c97f0d80a7cce1c440f402997ecc20ba109249b3360d28be6261b",
-      "size": 9937
+      "sha256": "8fe58d78d0efe20f77ee670bbe2ad7816ce927828651ce4d85061fff2dc3213a",
+      "size": 10026
     },
     {
       "path": "assets/fallback.ttf",
@@ -39,13 +39,8 @@
       "size": 757076
     },
     {
-      "path": "assets/intro.png",
-      "sha256": "b225551396c9809f098b4c34fb4264b284a3b4772aee31db3bf49d44ac2b28bb",
-      "size": 60015
-    },
-    {
       "path": "bin/trimui-terminal",
-      "sha256": "11bcd429c18d93b29053e52b1e2295392926d63ba27604e418137668a4835f3a",
+      "sha256": "2dad5e042bb23d68978cc3774cb47fc49e6522dc55551e39c92b33009eeaf252",
       "size": 601656
     },
     {
@@ -60,8 +55,8 @@
     }
   ],
   "release_asset": {
-    "name": "trimui-terminal-v0.3.2.zip",
-    "sha256": "b04aea1e5894ab38e4cbd417165c5c195ddd2aad74c038c56e4ca4f0d0ac9974",
-    "size": 591843
+    "name": "trimui-terminal-v0.3.3.zip",
+    "sha256": "eb6643d946778db37ed7aba5c041e940eeeaf332159729174e4a3b5bd07d2fd0",
+    "size": 537858
   }
 }

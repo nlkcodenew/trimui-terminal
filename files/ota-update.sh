@@ -227,5 +227,6 @@ cd "$APP" || exit 1
 printf "%s" "$REM" | tr -d " \r\n" > "$APP/VERSION" 2>/dev/null
 say "Cập nhật xong $CUR -> $REM. Thoát app và mở lại."
 ota_status "done $REM"
-rm -rf "$TMPD" "$MANIFEST_JSON"
+# $LIST nam canh $TMPD (khong phai ben trong) nen phai xoa rieng.
+rm -rf "$TMPD" "$MANIFEST_JSON" "$LIST" "$TMPD.dl.tmp"
 exit 0

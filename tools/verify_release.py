@@ -25,8 +25,8 @@ def main():
     shipped_version = open(shipped, encoding="utf-8").read().strip() if os.path.isfile(shipped) else ""
     check(shipped_version == version,
           "files/VERSION khop VERSION (%r)" % shipped_version)
-    check(os.path.isfile(os.path.join(ROOT, "files", "assets", "intro.png")),
-          "intro.png ton tai")
+    check(os.path.isfile(os.path.join(ROOT, "files", "assets", "fallback.ttf")),
+          "assets/fallback.ttf ton tai")
     check(os.path.isfile(BIN), "files/bin/trimui-terminal ton tai")
     if os.path.isfile(BIN):
         with open(BIN, "rb") as h:
@@ -34,8 +34,18 @@ def main():
         check(magic[:4] == b"\x7fELF", "binary la ELF")
         check(int.from_bytes(magic[18:20], "little") == 0xB7, "binary la AArch64 (EM=183)")
         check(os.path.getsize(BIN) > 20000, "binary co kich thuoc hop ly")
+        # Intro NLK phai nam trong binary: firmware nay khong co fim/fbv/fbi
+        # nen intro ve trong app la cach duy nhat that su hien duoc.
+        with open(BIN, "rb") as h:
+            blob = h.read()
+        for marker in (b"intro: NLK xong", b"intro.off", b".no-intro", b"-nointro"):
+            check(marker in blob, "binary chua intro NLK (%s)" % marker.decode("ascii"))
+        check(version.encode("ascii") in blob,
+              "binary duoc bien dich voi VERSION=%s" % version)
         s1 = open(os.path.join(ROOT, "files", "launch.sh"), encoding="utf-8", errors="replace").read()
         check("stay_alive" in s1, "launch.sh giu may tranh deep-suspend")
+        check("fim -" not in s1 and "fbv " not in s1 and "fbi " not in s1,
+              "launch.sh khong con dua intro vao fim/fbv/fbi (firmware khong co)")
         cfg = json.load(open(os.path.join(ROOT, "files", "config.json"), encoding="utf-8"))
         check(cfg.get("launch") == "launch.sh", "config.json tro dung launch.sh")
     with open(os.path.join(ROOT, "files", "ota-update.sh"), encoding="utf-8", errors="replace") as h:

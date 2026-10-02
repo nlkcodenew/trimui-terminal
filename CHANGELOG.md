@@ -1,3 +1,11 @@
+## v0.3.3 - 2026-10-02
+
+- Logo khoi dong NLK **ve bang chinh app** (SDL_ttf) thay vi dua cho `fim`/`fbv`/`fbi`: firmware nay khong co trinh xem framebuffer nao nen cach cu khong bao gio hien du co `assets/intro.png`. Gio nền gần đen + chữ đỏ #E50914 có quầng, canh giữa, co vừa màn hình nhỏ, ~1.2s, bấm phím bất kỳ bỏ qua ngay.
+- Bỏ khối `fim/fbv/fbi` trong `launch.sh` (chết, gây hiểu nhầm là đã có intro).
+- Tắt intro: `TERMINAL_NO_INTRO=1`, file `intro.off` / `.no-intro`, `config.json` `"intro": false`, hoặc thêm `-nointro` khi gọi binary.
+- `verify_release.py` chặn release nếu binary không chứa intro hoặc được biên dịch sai `-DVERSION`.
+- OTA: xoá luôn `.update_staging.apply.list` cạnh thư mục staging (trước đó sót lại mỗi lần cập nhật).
+
 ## v0.3.2 - 2026-10-02
 
 - Sửa OTA "cập nhật xong" nhưng app vẫn hiện version cũ: nhãn version + banner + credit giờ đọc file `VERSION` (do `ota-update.sh` ghi lại sau mỗi lần cập nhật) thay vì hằng `-DVERSION` lúc biên dịch. Bản v0.3.1 đã đóng gói y hệt binary của v0.3.0 (`-DVERSION="0.3.0"`) nên không bao giờ đổi nhãn.

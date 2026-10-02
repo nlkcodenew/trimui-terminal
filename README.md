@@ -39,11 +39,11 @@ Tham số khi chạy: `-scale 1.0`, `-font 1..5 | /path/font.ttf`, `-fontsize N`
 - Chạy tay trong terminal: `sh ota-update.sh` (bản cũ hỏi y/N), `sh ota-update.sh --apply`, `sh ota-update.sh --check`.
 - Tắt tự động: mở app với `TERMINAL_NO_OTA=1`.
 
-## Intro NLK (~1s)
+## Intro NLK (~1.2s)
 
-Mở app hiện splash chữ NLK đỏ (#E50914) trên nền đen, chiếu bằng `fim`/`fbv`/`fbi` (có cái nào dùng cái đó, không có thì bỏ qua, không ảnh hưởng boot). Ảnh render sẵn: `files/assets/intro.png` (1024x768, đúng màn hình Brick), tạo lại bằng `python tools/render_intro.py`.
+Mở app hiện logo chữ **NLK** đỏ (#E50914) trên nền gần đen, **do chính binary vẽ bằng SDL_ttf** ngay khi app mở (không phụ thuộc `fim`/`fbv`/`fbi` — firmware này không có trình xem framebuffer nào nên cách cũ không bao giờ hiện được). Chữ cao ~30% màn hình, canh giữa, tự co vừa màn hình nhỏ. Bấm phím bất kỳ là bỏ qua ngay.
 
-Tắt intro (mặc định bật): `TERMINAL_NO_INTRO=1`, hoặc tạo file `intro.off` cạnh `launch.sh`, hoặc đặt `"intro": false` trong `config.json`.
+Tắt intro (mặc định bật): `TERMINAL_NO_INTRO=1`, tạo file `intro.off` hoặc `.no-intro` cạnh `launch.sh`, đặt `"intro": false` trong `config.json`, hoặc thêm `-nointro` khi gọi binary.
 
 ## BT survey (mục đích của app)
 
