@@ -1,3 +1,7 @@
+## v0.3.5 - 2026-10-17
+
+- Icon mới: glossy 3D, nền trong suốt.
+
 ## v0.3.4 - 2026-10-02
 
 - Logo NLK chuyển từ splash tĩnh sang **animation đầy đủ giống hệt Music-Player**: chữ N/L/K bay lên lần lượt, nảy overshoot, giãn chữ 4 → 30, chuyển từ đỏ sẫm sang đỏ tươi + quầng đỏ lệch +4/+6, tia sáng trắng quét N → L → K trong đoạn 0.72 → 1.00, tổng 2.2 giây, bấm phím bất kỳ bỏ qua ngay.

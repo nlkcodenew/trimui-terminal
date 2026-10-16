@@ -1,11 +1,11 @@
 {
-  "version": "0.3.4",
+  "version": "0.3.5",
   "app": "trimui-terminal",
-  "built": "2026-10-02T15:31:45+07:00",
+  "built": "2026-10-17T00:46:05+07:00",
   "files": [
     {
       "path": "VERSION",
-      "sha256": "027a61167f091a427fa7844dcac0c5141bafbcbdcadc7e04a93578147ab956f2",
+      "sha256": "d5d1d767be9218f02ebda081a83a2b2fede85055e910e5a94a09329966486fcc",
       "size": 6
     },
     {
@@ -20,8 +20,8 @@
     },
     {
       "path": "icon.png",
-      "sha256": "7cd52ed54485c7c91b23f545f41f6a45a73771c4c83c70a309e7360071a3f724",
-      "size": 6948
+      "sha256": "69a1a0a0de937a6f2791b5d6749af48c26bfd12c23d798d8b4cf5b63258a5105",
+      "size": 62846
     },
     {
       "path": "launch.sh",
@@ -55,8 +55,8 @@
     }
   ],
   "release_asset": {
-    "name": "trimui-terminal-v0.3.4.zip",
-    "sha256": "469adb7c877bda1f87ef87bf74451c29e05d07ce7b0dc84dc2e3fc00c2ee19eb",
-    "size": 539089
+    "name": "trimui-terminal-v0.3.5.zip",
+    "sha256": "78dcecde28fd45072b7d84cf9037e6a7b54bfd6b53653cde27ee1ccfe73ee11a",
+    "size": 595799
   }
 }
