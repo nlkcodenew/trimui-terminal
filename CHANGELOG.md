@@ -1,3 +1,7 @@
+## v0.3.6 - 2026-10-17
+
+- Launcher background riêng: thêm `background.png` (đen + quầng phosphor xanh lá + scanlines, hợp tông icon Terminal) + key `"background"` trong `config.json` — khi focus icon trong menu máy, nền đổi theo app.
+
 ## v0.3.5 - 2026-10-17
 
 - Icon mới: glossy 3D, nền trong suốt.
