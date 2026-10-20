@@ -1,3 +1,10 @@
+## v0.3.8 - 2026-10-20
+
+- Bản phát hành phục vụ **kiểm thử nút OTA** mới có trong v0.3.7: thiết bị
+  cài tay v0.3.7 sẽ thấy bản này khi bấm phím OTA trên bàn phím ảo để thử
+  luồng A xác nhận cập nhật / B bỏ qua. Không thay đổi tính năng so với
+  v0.3.7 (chỉ tăng số phiên bản).
+
 ## v0.3.7 - 2026-10-20
 
 - **Nút kiểm tra OTA ngay trong app:** thêm phím `OTA` ở hàng dưới bàn phím
