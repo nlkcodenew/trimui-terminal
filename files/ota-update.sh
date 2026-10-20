@@ -1,6 +1,8 @@
 #!/bin/sh
 # OTA cho trimui-terminal: kiem manifest GitHub, tai file lech hash, staging + apply.
 # Dung: sh ota-update.sh | sh ota-update.sh --apply | sh ota-update.sh --check
+# --avail: nhu --check nhung ghi .ota-status "available <ver>" / "uptodate <ver>"
+# de app hien popup hoi A (cap nhat) / B (bo qua). App goi khi user bam phim OTA.
 # --apply: tu dong (launch.sh goi moi lan mo app, khong hoi). That bai/offline -> bo qua.
 case "$0" in
   */*)
@@ -142,8 +144,14 @@ if ! ver_newer "$REM" "$CUR"; then
   # Ghi lai VERSION de binary doc dung (binary cu doc file nay, fallback -DVERSION).
   printf "%s" "$CUR" > "$APP/VERSION" 2>/dev/null || true
   rm -rf "$TMPD" "$MANIFEST_JSON"
-  ota_clear
+  if [ "${1:-}" = "--avail" ]; then ota_status "uptodate $CUR"; else ota_clear; fi
   exit 2
+fi
+if [ "${1:-}" = "--avail" ]; then
+  say "Có bản mới: $REM (đang dùng $CUR)"
+  ota_status "available $REM"
+  rm -rf "$TMPD" "$MANIFEST_JSON"
+  exit 10
 fi
 if [ "${1:-}" = "--check" ]; then
   say "Có bản mới: $REM (đang dùng $CUR). Chạy sh ota-update.sh --apply để cập nhật."

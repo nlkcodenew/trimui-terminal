@@ -190,6 +190,7 @@ static void load_app_version(void) {
 }
 static void trimui_free_popup_cache(void);
 static void trimui_free_ota_badge(void);
+static void trimui_set_ota_badge(const char *txt);
 extern volatile int trimui_thread_should_exit;
 extern volatile int trimui_child_exited;
 
@@ -511,6 +512,33 @@ void trimui_show_quit_confirm(void) {
 void trimui_hide_quit_confirm(void) {
     popup_message[0] = '\0';
 }
+
+/* Kiem tra OTA thu cong (phim OTA tren OSK). ota_manual_check=1 khi user
+   tu bam kiem tra: phai bao ca ket qua "da moi nhat"/"that bai", khac voi
+   luong chay nen luc mo app (im lang). */
+static int ota_manual_check = 0;
+static char ota_avail_ver[32] = "";
+void trimui_ota_check_start(void) {
+    if (ota_manual_check) return;
+    ota_manual_check = 1;
+    trimui_set_ota_badge("Đang kiểm tra...");
+    system("sh ./ota-update.sh --avail >/dev/null 2>&1 &");
+}
+void trimui_ota_apply_update(void) {
+    ota_manual_check = 0;
+    system("sh ./ota-update.sh --apply >/dev/null 2>&1 &");
+}
+void trimui_show_ota_confirm(const char *ver) {
+    snprintf(ota_avail_ver, sizeof(ota_avail_ver), "%s", ver);
+    snprintf(popup_message, sizeof(popup_message),
+             "CÓ BẢN MỚI v%s|A: CẬP NHẬT — B: BỎ QUA", ver);
+}
+void trimui_hide_ota_confirm(void) {
+    if (ota_avail_ver[0]) {
+        popup_message[0] = '\0';
+        ota_avail_ver[0] = '\0';
+    }
+}
 void sdl_shutdown(void) {
     if (SDL_WasInit(SDL_INIT_EVERYTHING) != 0 && !shutdown_called) {
         shutdown_called = 1;
@@ -830,8 +858,34 @@ static void trimui_poll_ota(void) {
         trimui_set_ota_badge(b);
     } else if (strcmp(st, "checking") == 0) {
         trimui_set_ota_badge("Đang kiểm tra...");
+    } else if (strncmp(st, "available ", 10) == 0) {
+        /* ota-update.sh --avail (user bam phim OTA): co ban moi -> hoi A/B. */
+        const char *ver = st + 10;
+        if (strcmp(ver, ota_avail_ver) != 0) {
+            trimui_show_ota_confirm(ver);
+            trimui_ota_arm_confirm();
+        }
+        ota_manual_check = 0;
+        remove(".ota-status");
+        trimui_free_ota_badge();
+    } else if (strncmp(st, "uptodate", 8) == 0) {
+        if (ota_manual_check) {
+            ota_manual_check = 0;
+            snprintf(popup_message, sizeof(popup_message),
+                     "ĐÃ LÀ BẢN MỚI NHẤT (v%s)", app_version);
+            SDL_AddTimer(4000, clear_popup_timer, NULL);
+        }
+        remove(".ota-status");
+        trimui_free_ota_badge();
     } else {
-        /* failed...: xoa lang, chi tiet xem Terminal-ota.log */
+        /* failed...: luong nen thi xoa lang; kiem tra thu cong thi bao user.
+           Chi tiet xem Terminal-ota.log */
+        if (ota_manual_check && strncmp(st, "failed", 6) == 0) {
+            ota_manual_check = 0;
+            snprintf(popup_message, sizeof(popup_message),
+                     "KIỂM TRA THẤT BẠI|XEM LOG Terminal-ota.log");
+            SDL_AddTimer(5000, clear_popup_timer, NULL);
+        }
         remove(".ota-status");
         trimui_free_ota_badge();
     }

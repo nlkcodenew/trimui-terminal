@@ -32,13 +32,13 @@ static char *syms[2][NUM_ROWS][NUM_KEYS] = {{{"Esc", "F1", "F2", "F3", "F4", "F5
                                              {"Tab", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\", "Home", "End", " \xde ", NULL},
                                              {"Caps", "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", "Enter", "Pg Up", " < ", NULL},
                                              {"Shift", "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", " Shift", "Pg Dn", " > ", NULL},
-                                             {"Ctl", "", "Alt", "   Space   ", "Alt", "", "Ctl", "PrS", "Mov", "Exit", NULL}},
+                                             {"Ctl", "", "Alt", "   Space   ", "Alt", "OTA", "Ctl", "PrS", "Mov", "Exit", NULL}},
                                             {{"Esc", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", NULL},
                                              {"~ ", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+", "Bsp", "Ins", "Del", " ^ ", NULL},
                                              {"Tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|", "Home", "End", " \xde ", NULL},
                                              {"Caps", "A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\"", "Enter", "Pg Up", " < ", NULL},
                                              {"Shift", "Z", "X", "C", "V", "B", "N", "M", "<", ">", "?", " Shift", "Pg Dn", " > ", NULL},
-                                             {"Ctl", "", "Alt", "   Space   ", "Alt", "", "Ctl", "PrS", "Mov", "Exit", NULL}}};
+                                             {"Ctl", "", "Alt", "   Space   ", "Alt", "OTA", "Ctl", "PrS", "Mov", "Exit", NULL}}};
 
 static unsigned char toggled[NUM_ROWS][NUM_KEYS];
 
@@ -50,6 +50,11 @@ static int mod_state = 0;
 static int quit_combo_select = 0;
 static int quit_combo_start = 0;
 static int quit_confirm_until = 0;
+static int ota_confirm_until = 0;
+
+/* main.c goi khi ota-update.sh --avail bao co ban moi: mo cua so xac nhan
+   (A cap nhat / B bo qua) trong 30s. */
+void trimui_ota_arm_confirm(void) { ota_confirm_until = trimui_ticks_ms() + 30000; }
 
 int active = 1;
 int show_help = 1;
@@ -100,7 +105,8 @@ char *help1 =
     "  START: Enter\n"
     "  SELECT: Tab\n"
     "  SELECT+START / MENU: thoát app\n"
-    "  L2 / R2: trái / phải (tắt bàn phím: cuộn lịch sử)\n\n"
+    "  L2 / R2: trái / phải (tắt bàn phím: cuộn lịch sử)\n"
+    "  Phím OTA (hàng dưới): kiểm tra cập nhật — có bản mới thì A cập nhật, B bỏ qua\n\n"
     "Lệnh hay dùng (học tại www.shellscript.sh):\n"
     "  TAB           gợi ý đường dẫn\n"
     "  UP/DOWN       xem lại lịch sử lệnh\n"
@@ -122,7 +128,8 @@ char *help2 =
     "  X: ẩn / hiện bàn phím\n"
     "  START: Enter\n"
     "  SELECT: Tab\n"
-    "  SELECT+START / MENU: thoát app\n\n";
+    "  SELECT+START / MENU: thoát app\n"
+    "  Phím OTA (hàng dưới): kiểm tra cập nhật — A cập nhật, B bỏ qua\n\n";
 
 #define CREDIT "@haoict (c) 2025"
 
@@ -424,6 +431,25 @@ int handle_keyboard_event(SDL_Event *event) {
 #if defined(BR2) && !defined(RPI)
     if ((event->key.type == SDL_KEYDOWN) && !(event->key.keysym.mod & KMOD_SYNTHETIC)) {
         int now = trimui_ticks_ms();
+        if (ota_confirm_until && now < ota_confirm_until) {
+            if (event->key.keysym.sym == JOYBUTTON_A) {
+                printf("OTA: A - bat dau cap nhat\n");
+                ota_confirm_until = 0;
+                trimui_hide_ota_confirm();
+                trimui_ota_apply_update();
+                return 1;
+            }
+            if (event->key.keysym.sym == JOYBUTTON_B) {
+                printf("OTA: B - bo qua cap nhat\n");
+                ota_confirm_until = 0;
+                trimui_hide_ota_confirm();
+                return 1;
+            }
+        }
+        if (ota_confirm_until && now >= ota_confirm_until) {
+            ota_confirm_until = 0;
+            trimui_hide_ota_confirm();
+        }
         if (event->key.keysym.sym == JOYBUTTON_B) {
             if (quit_confirm_until && now < quit_confirm_until) {
                 printf("B lần 2: thoát app\n");
@@ -576,6 +602,11 @@ int handle_keyboard_event(SDL_Event *event) {
                 simulate_key(keys[shifted][selected_j][selected_i], STATE_UP);
             if (selected_j == 4 && (selected_i == 0 || selected_i == 11)) shifted = toggled[selected_j][selected_i];
         } else if (event->key.keysym.sym == KEY_ENTER) {
+            if (selected_j == 5 && selected_i == 5) {
+                printf("Kiem tra cap nhat OTA (phim OTA ao)\n");
+                trimui_ota_check_start();
+                return 1;
+            }
             if (selected_j == 5 && selected_i == 9) {
                 printf("Thoát app (phím Exit ảo)\n");
                 SDL_Event quit_event;

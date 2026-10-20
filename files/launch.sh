@@ -16,6 +16,7 @@ if [ ! -x "$BIN" ]; then
   exit 1
 fi
 touch /tmp/stay_alive 2>/dev/null
+touch /var/trimui_inputd/sticks_disabled 2>/dev/null
 rm -f "$APP/.ota-status" 2>/dev/null
 if [ -x "$APP/ota-update.sh" ] && [ "$TERMINAL_NO_OTA" != "1" ]; then
   # Chay nen: app mo ngay lap tuc, app tu hien "Dang cap nhat..." + bao khi xong.
@@ -35,5 +36,5 @@ if [ "$TERMINAL_NO_INTRO" = "1" ]; then
 fi
 "$BIN" -scale 1 -fontsize 16 "$@" 2>> "$ERRLOG"
 CODE=$?
-rm -f /tmp/stay_alive 2>/dev/null
+rm -f /tmp/stay_alive /var/trimui_inputd/sticks_disabled 2>/dev/null
 exit $CODE

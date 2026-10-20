@@ -1,3 +1,20 @@
+## v0.3.7 - 2026-10-20
+
+- **Nút kiểm tra OTA ngay trong app:** thêm phím `OTA` ở hàng dưới bàn phím
+  ảo (cạnh phím Exit). Bấm vào → app chạy `ota-update.sh --avail` kiểm tra
+  bản mới: có bản mới hiện popup "CÓ BẢN MỚI vX — A: CẬP NHẬT, B: BỎ QUA"
+  (hiệu lực 30 giây); đã mới nhất / thất bại cũng báo popup rõ ràng thay vì
+  im lặng như luồng chạy nền. `ota-update.sh` thêm mode `--avail` ghi
+  `.ota-status` dạng `available <ver>` / `uptodate <ver>`.
+- Thêm `files/run-in-terminal.sh` helper (học từ app Terminal tham khảo):
+  đảm bảo script chạy bên trong Trimui-Terminal
+  (`run-in-terminal.sh [-s 24] -- "/path/script.sh"`); tự phát hiện đã ở
+  trong terminal để tránh đệ quy (qua /proc/$PPID/comm).
+- launch.sh: thêm trick `touch /var/trimui_inputd/sticks_disabled` khi mở
+  (tránh inputd xử lý stick chậm), dọn khi thoát.
+- Ghi chú: app tham khảo dùng libvterm; app này là fork
+  haoict/SimpleTerminal 2.1.0 với bộ giả lập VT riêng — giữ nguyên engine.
+
 ## v0.3.6 - 2026-10-17
 
 - Launcher background riêng: thêm `background.png` (đen + quầng phosphor xanh lá + scanlines, hợp tông icon Terminal) + key `"background"` trong `config.json` — khi focus icon trong menu máy, nền đổi theo app.

@@ -1,11 +1,11 @@
 {
-  "version": "0.3.6",
+  "version": "0.3.7",
   "app": "trimui-terminal",
-  "built": "2026-10-17T16:05:02+07:00",
+  "built": "2026-10-20T12:37:49+07:00",
   "files": [
     {
       "path": "VERSION",
-      "sha256": "6d7ff4be0be7debf12dc50067f10057f5d85815ef89e542bc291bc2c893cbbbb",
+      "sha256": "2e376439ec341f14ae018b8aa4796b9336702e6a59d6c42b91f61d84baac9807",
       "size": 6
     },
     {
@@ -30,13 +30,18 @@
     },
     {
       "path": "launch.sh",
-      "sha256": "366355ea6a5d93801de087cf5a5931eb6fffaf8a1f75c95a8201c44b79b9b522",
-      "size": 1460
+      "sha256": "9bfaa99745f4c9dfde3dc91eb70d22796fe18b31d9a04fecfa2b1c8f08f78667",
+      "size": 1548
     },
     {
       "path": "ota-update.sh",
-      "sha256": "8fe58d78d0efe20f77ee670bbe2ad7816ce927828651ce4d85061fff2dc3213a",
-      "size": 10026
+      "sha256": "bd57e413748bb2844a72ba2a2ad9b2f20010134f142e2d0edc75ee0c435d5fca",
+      "size": 10421
+    },
+    {
+      "path": "run-in-terminal.sh",
+      "sha256": "110949759ccb6a87dd494b75b52157f1bd0b6eda168931822e8893ccf7d7dc5a",
+      "size": 1203
     },
     {
       "path": "assets/fallback.ttf",
@@ -45,8 +50,8 @@
     },
     {
       "path": "bin/trimui-terminal",
-      "sha256": "b85eab4005652929f7571dc22351edcdff9739fa10abfe488fd4211cc2096419",
-      "size": 605720
+      "sha256": "c8cd29063c8d88f926f2bcdcb8ae7e74b98ddfaa77bba6e1a7e9842e76e73340",
+      "size": 605752
     },
     {
       "path": "certs/README.txt",
@@ -60,8 +65,8 @@
     }
   ],
   "release_asset": {
-    "name": "trimui-terminal-v0.3.6.zip",
-    "sha256": "03b55fdf164d2930e211af4b68ffb9ceeb873623ff06ca8275737f26addb130e",
-    "size": 706139
+    "name": "trimui-terminal-v0.3.7.zip",
+    "sha256": "c324b6a6f283a628d2505d17b373203ff7691b8e0e76440504ea20cd42b2b4fd",
+    "size": 707294
   }
 }
